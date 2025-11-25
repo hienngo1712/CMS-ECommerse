@@ -1,13 +1,13 @@
 import React from "react";
 import type { CategoriesResponse } from "./Types";
-import { Tag } from "antd";
+import { Table, Tag } from "antd";
 
 type Props = {
   categories: CategoriesResponse[];
   total: number;
   page: number;
   pageSize: number;
-  isLoading: boolean;
+  loading: boolean;
   onPageChange: (page: number, pageSize: number) => void;
   onDelete: (id: number) => void;
   onEdit: (id: number) => void;
@@ -15,9 +15,10 @@ type Props = {
 
 const TableCategories = ({
   categories,
+  total,
   page,
   pageSize,
-  isLoading,
+  loading,
   onDelete,
   onEdit,
   onPageChange,
@@ -52,7 +53,21 @@ const TableCategories = ({
       render: (text: string) => <b>{text}</b>,
     },
   ];
-  return <div>TableCategories</div>;
+  return (
+    <Table
+      columns={columns}
+      dataSource={[]}
+      loading={loading}
+      rowKey={"id"}
+      pagination={{
+        current: page,
+        pageSize,
+        total,
+        showSizeChanger: true,
+        onChange: onPageChange,
+      }}
+    ></Table>
+  );
 };
 
 export default TableCategories;
