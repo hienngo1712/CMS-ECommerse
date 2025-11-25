@@ -7,3 +7,9 @@ export type CategoriesResponse = {
   createdAt: string;
   updatedAt: string;
 }
+
+export type CategoriesPayload = {
+  name: string;
+  slug: string;
+  isActive: boolean;
+}
