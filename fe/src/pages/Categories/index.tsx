@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import AppFilters, {
   type FilterConfig,
@@ -6,6 +6,8 @@ import AppFilters, {
 import { Button } from "antd";
 import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
+import categoryService from "../../services/CategoryService.ts";
+import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
 
 type Props = {};
 
@@ -41,10 +43,43 @@ const categoriesFilter: FilterConfig[] = [
 const CategoriesPage = (props: Props) => {
   const { isDark } = useContext(ThemeContext);
   const [isOpen, setIsOpen] = useState(false);
-  const handleGetValueFilter = () => {};
+  const [isLoading, setIsLoading] = useState(false);
+  const [query, setQuery] = useState<CategoryQuery>({
+    search: "",
+    isActive: "",
+    page: 1,
+    limit: 10,
+  });
+
+  const [categories, setCategories] = useState<CategoriesResponse[]>([]);
+  const handleGetValueFilter = (values: Record<string, any>) => {
+    console.log(values);
+  };
+  const fetchCategories = async () => {
+    try {
+      setIsLoading(true);
+      const res = await categoryService.getCategories(query);
+      console.log("Check res.data", res.data);
+
+      setCategories(res.data);
+      setQuery((prev) => ({
+        ...prev,
+        page: res.meta.page,
+        limit: res.meta.limit,
+      }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
   const handleToggleModal = () => {
     setIsOpen(!isOpen);
   };
+  console.log("Categories", categories);
+  console.log("Query", query);
+
+  useEffect(() => {
+    fetchCategories();
+  }, [query.page, query.limit, query.search, query.isActive]);
   return (
     <div
       style={{
@@ -70,7 +105,7 @@ const CategoriesPage = (props: Props) => {
         page={1}
         pageSize={10}
         total={0}
-        categories={[]}
+        categories={categories || []}
         onPageChange={() => {}}
         onDelete={() => {}}
         onEdit={() => {}}

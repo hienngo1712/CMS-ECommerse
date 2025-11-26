@@ -50,13 +50,13 @@ const TableCategories = ({
       title: "Hành động",
       dataIndex: "actions",
       key: "actions",
-      render: (text: string) => <b>{text}</b>,
+      render: (text: string) => <b>Hành động</b>,
     },
   ];
   return (
     <Table
       columns={columns}
-      dataSource={[]}
+      dataSource={categories}
       loading={loading}
       rowKey={"id"}
       pagination={{

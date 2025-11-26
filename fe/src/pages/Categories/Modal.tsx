@@ -1,4 +1,3 @@
-import React from "react";
 import categoryService from "../../services/CategoryService";
 import AppModal from "../../components/common/AppModal";
 import { Form, Input, Switch } from "antd";

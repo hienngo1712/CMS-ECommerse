@@ -13,3 +13,23 @@ export type CategoriesPayload = {
   slug: string;
   isActive: boolean;
 }
+
+export interface PaginationMeta {
+  total: number;
+  page: number;
+  limit: number;
+  pageCount: number
+}
+
+export type CategoryQuery = {
+  page: number;
+  limit: number;
+  search?: string;
+  meta?: PaginationMeta;
+  isActive?: string | boolean
+}
+
+export type CategoriesResponseList = {
+  data: CategoriesResponse[];
+  meta: PaginationMeta;
+}

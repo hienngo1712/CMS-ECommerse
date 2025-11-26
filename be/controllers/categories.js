@@ -40,9 +40,33 @@ const categoriesControllers = {
           }),
       }
       console.log(where);
-      
+      const [categories, total] = await Promise.all([
+        prisma.category.findMany({
+          skip,
+          take: limit,
+          where,
+          orderBy:{
+            id: "desc"
+          }
+        }),
+        prisma.category.count({where}),
+      ]);
+      console.log(categories);
+      console.log(total);
+      res.json({
+        data: categories,
+        meta:{
+          total,
+          page,
+          limit,
+          pageCount: Math.ceil(total/limit),
+        },
+      });
     } catch(error) {
-      
+      console.log(error);
+      res.status(500).json({
+        error: "Internal server error",
+      });
     }
   }
 };

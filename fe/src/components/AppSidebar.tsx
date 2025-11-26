@@ -44,7 +44,7 @@ const AppSidebar: React.FC = () => {
   return (
     <Sider trigger={null} collapsible>
       <div className="text-xl font-bold text-blue-600 text-center py-5">
-        ADMIN PANEL
+        CMS Ecommerce
       </div>
       <Menu
         theme={isDark ? "dark" : "light"}
