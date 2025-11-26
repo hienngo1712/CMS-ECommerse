@@ -3,7 +3,7 @@ import Modal from "antd/es/modal/Modal";
 import React from "react";
 
 type AppModalProps = ModalProps & {
-  bg: string;
+  bg?: string;
 };
 
 const AppModal: React.FC<AppModalProps> = ({ children, ...rest }) => {

@@ -1,10 +1,11 @@
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import AppFilters, {
   type FilterConfig,
 } from "../../components/common/AppFilters.tsx";
 import { Button } from "antd";
 import TableCategories from "./Table.tsx";
+import ModalCategories from "./Modal.tsx";
 
 type Props = {};
 
@@ -39,7 +40,11 @@ const categoriesFilter: FilterConfig[] = [
 
 const CategoriesPage = (props: Props) => {
   const { isDark } = useContext(ThemeContext);
+  const [isOpen, setIsOpen] = useState(false);
   const handleGetValueFilter = () => {};
+  const handleToggleModal = () => {
+    setIsOpen(!isOpen);
+  };
   return (
     <div
       style={{
@@ -56,7 +61,9 @@ const CategoriesPage = (props: Props) => {
           filters={categoriesFilter}
           onChange={handleGetValueFilter}
         />
-        <Button type={"primary"}>+ Tạo danh mục mới </Button>
+        <Button onClick={handleToggleModal} type={"primary"}>
+          + Tạo danh mục mới{" "}
+        </Button>
       </div>
       <TableCategories
         loading={false}
@@ -67,6 +74,11 @@ const CategoriesPage = (props: Props) => {
         onPageChange={() => {}}
         onDelete={() => {}}
         onEdit={() => {}}
+      />
+      <ModalCategories
+        open={isOpen}
+        onClose={handleToggleModal}
+        onSuccess={handleToggleModal}
       />
     </div>
   );
