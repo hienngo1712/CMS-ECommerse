@@ -16,6 +16,35 @@ const categoriesControllers = {
       res.status(400).json({error: error.message});
     }
   },
+
+  getCategories: async (req,res) => {
+    try{
+      let page = parseInt(req.query.page, 10) || 1;
+      let limit = parseInt(req.query.limit, 10) || 10;
+      const search = req.query.search || "";
+      const isActive = req.query.isActive;
+      if (page < 1 ) page = 1;
+      if (limit < 1 ) limit = 10;
+      if (limit >100) limit = 100;
+      const skip = (page - 1) * limit;
+      const where = {
+        ...(search && {
+          name: {
+            constains: search,
+            mode: "insensitive"
+          }
+        }),
+        ...(isActive !== undefined && 
+          isActive !== "" && {
+            isActive: isActive === "true",
+          }),
+      }
+      console.log(where);
+      
+    } catch(error) {
+      
+    }
+  }
 };
 
 module.exports = categoriesControllers;
