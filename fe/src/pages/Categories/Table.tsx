@@ -1,6 +1,7 @@
 import React from "react";
 import type { CategoriesResponse } from "./Types";
 import { Table, Tag } from "antd";
+import TableActions from "../../components/common/TableAction";
 
 type Props = {
   categories: CategoriesResponse[];
@@ -50,7 +51,16 @@ const TableCategories = ({
       title: "Hành động",
       dataIndex: "actions",
       key: "actions",
-      render: (text: string) => <b>Hành động</b>,
+      render: (text: string) => (
+        <>
+          <TableActions
+            showEdit
+            showDelete
+            onEdit={() => {}}
+            onDelete={() => {}}
+          />
+        </>
+      ),
     },
   ];
   return (
