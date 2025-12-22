@@ -29,11 +29,11 @@ const categoriesFilter: FilterConfig[] = [
       },
       {
         label: "Hoạt động",
-        value: 1,
+        value: "true",
       },
       {
         label: "Không hoạt động",
-        value: 2,
+        value: "false",
       },
     ],
     label: "Trạng thái",
@@ -54,6 +54,12 @@ const CategoriesPage = (props: Props) => {
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
   const handleGetValueFilter = (values: Record<string, any>) => {
     console.log(values);
+    setQuery((prev) => ({
+      ...prev,
+      page: 1,
+      search: values?.search,
+      isActive: values?.isActive,
+    }));
   };
   const fetchCategories = async () => {
     try {
@@ -66,8 +72,11 @@ const CategoriesPage = (props: Props) => {
         ...prev,
         page: res.meta.page,
         limit: res.meta.limit,
+        meta: res.meta,
       }));
+      setIsLoading(false);
     } catch (error) {
+      setIsLoading(false);
       console.log(error);
     }
   };
@@ -77,6 +86,14 @@ const CategoriesPage = (props: Props) => {
   console.log("Categories", categories);
   console.log("Query", query);
 
+  const handleChangePageSizeTable = (newPage: number, newSize: number) => {
+    console.log(newPage, newSize);
+    setQuery((prev) => ({
+      ...prev,
+      page: newPage,
+      limit: newSize,
+    }));
+  };
   useEffect(() => {
     fetchCategories();
   }, [query.page, query.limit, query.search, query.isActive]);
@@ -101,19 +118,21 @@ const CategoriesPage = (props: Props) => {
         </Button>
       </div>
       <TableCategories
-        loading={false}
-        page={1}
-        pageSize={10}
-        total={0}
+        loading={isLoading}
+        page={query.page}
+        pageSize={query.limit}
+        total={query?.meta?.total ?? 0}
         categories={categories || []}
-        onPageChange={() => {}}
+        onPageChange={handleChangePageSizeTable}
         onDelete={() => {}}
         onEdit={() => {}}
       />
       <ModalCategories
         open={isOpen}
         onClose={handleToggleModal}
-        onSuccess={handleToggleModal}
+        onSuccess={() => {
+          fetchCategories();
+        }}
       />
     </div>
   );

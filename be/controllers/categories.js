@@ -30,7 +30,7 @@ const categoriesControllers = {
       const where = {
         ...(search && {
           name: {
-            constains: search,
+            contains: search,
             mode: "insensitive"
           }
         }),

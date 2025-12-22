@@ -19,6 +19,7 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
       await categoryService.createCategory(values);
       form.resetFields();
       onClose();
+      onSuccess();
     } catch (error) {
       console.log(error);
     }
