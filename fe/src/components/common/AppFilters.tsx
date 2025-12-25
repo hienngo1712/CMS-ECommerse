@@ -43,42 +43,38 @@ const AppFilters: React.FC<FilterProps> = ({ filters, onChange }) => {
       {filters.map((filter) => {
         if (filter.type === "input") {
           return (
-            <>
-              <Form.Item
-                key={filter.name}
-                label={filter.label || ""}
-                style={{ marginBottom: 0 }}
-                layout="vertical"
-              >
-                <Input
-                  placeholder={filter.placeholder}
-                  allowClear
-                  onChange={(e) => handleChange(filter.name, e.target.value)}
-                  style={{ width: "200px" }}
-                />
-              </Form.Item>
-            </>
+            <Form.Item
+              key={filter.name}
+              label={filter.label || ""}
+              style={{ marginBottom: 0 }}
+              layout="vertical"
+            >
+              <Input
+                placeholder={filter.placeholder}
+                allowClear
+                onChange={(e) => handleChange(filter.name, e.target.value)}
+                style={{ width: "200px" }}
+              />
+            </Form.Item>
           );
         }
 
         if (filter.type === "select") {
           return (
-            <>
-              <Form.Item
-                key={filter.name}
-                label={filter.label || ""}
-                style={{ marginBottom: 0 }}
-                layout="vertical"
-              >
-                <Select
-                  placeholder={filter.placeholder}
-                  allowClear
-                  options={filter.options}
-                  style={{ width: "200px" }}
-                  onChange={(value) => handleChange(filter.name, value)}
-                />
-              </Form.Item>
-            </>
+            <Form.Item
+              key={filter.name}
+              label={filter.label || ""}
+              style={{ marginBottom: 0 }}
+              layout="vertical"
+            >
+              <Select
+                placeholder={filter.placeholder}
+                allowClear
+                options={filter.options}
+                style={{ width: "200px" }}
+                onChange={(value) => handleChange(filter.name, value)}
+              />
+            </Form.Item>
           );
         }
       })}

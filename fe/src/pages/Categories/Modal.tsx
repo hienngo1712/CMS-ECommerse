@@ -1,6 +1,7 @@
 import categoryService from "../../services/CategoryService";
 import AppModal from "../../components/common/AppModal";
 import { Form, Input, Switch } from "antd";
+import { useEffect } from "react";
 
 type Props = {
   open: boolean;
@@ -15,22 +16,36 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
   const handleOk = async () => {
     try {
       const values = await form.validateFields();
-      console.log(values);
-      await categoryService.createCategory(values);
-      form.resetFields();
+      if (categoryId) {
+        await categoryService.updateCategory(categoryId, values);
+      } else {
+        await categoryService.createCategory(values);
+      }
       onClose();
       onSuccess();
     } catch (error) {
       console.log(error);
     }
   };
+  useEffect(() => {
+    if (categoryId) {
+      categoryService.getCategoryById(categoryId).then((res) => {
+        form.setFieldsValue(res);
+        console.log("category id", categoryId);
+      });
+    } else {
+      form.resetFields();
+      form.setFieldsValue({ isActive: true });
+    }
+  }, [categoryId, form]);
+
   return (
     <AppModal
       title={categoryId ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
       open={open}
       onCancel={onClose}
       onOk={handleOk}
-      okText={"Tạo"}
+      okText={categoryId ? "Chỉnh sửa" : "Tạo"}
       cancelText={"Hủy"}
     >
       <Form layout="vertical" form={form}>
@@ -53,6 +68,7 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
         <Form.Item
           label="Trạng thái"
           name={"isActive"}
+          valuePropName="checked"
           rules={[{ required: true, message: "Vui lòng nhập Slug" }]}
         >
           <Switch />

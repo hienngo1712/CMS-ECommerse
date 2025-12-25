@@ -8,20 +8,16 @@ type Props = {};
 
 const AppHeader = (props: Props) => {
   const { isDark, toggleTheme } = useContext(ThemeContext);
-  const menu = (
-    <Menu
-      items={[
-        {
-          key: "profile",
-          label: "Profile",
-        },
-        {
-          key: "settings",
-          label: "Settings",
-        },
-      ]}
-    ></Menu>
-  );
+  const menuItems = [
+    {
+      key: "profile",
+      label: "Profile",
+    },
+    {
+      key: "settings",
+      label: "Settings",
+    },
+  ];
   return (
     <Header className="flex justify-between items-center px-6 shadow-sm">
       <div />
@@ -32,7 +28,7 @@ const AppHeader = (props: Props) => {
         >
           {isDark ? <BulbOutlined /> : <MoonOutlined />}
         </button>
-        <Dropdown overlay={menu} placement="bottomRight">
+        <Dropdown menu={{ items: menuItems }} placement="bottomRight">
           <Avatar
             size="large"
             icon={<UserOutlined />}

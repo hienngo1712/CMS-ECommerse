@@ -12,5 +12,20 @@ const categoryService = {
     });
     return res.data;
   },
+
+  getCategoryById: async (id: number) => {
+    const res = await axiosInstance.get(`/categories/${id}`);
+    return res.data;
+  },
+
+  updateCategory: async (id: number, data: Partial<CategoriesPayload>) =>{
+    const res = await axiosInstance.put(`/categories/${id}`, data);
+    return res.data;
+  },
+
+  deleteCategory: async (id: number) =>{
+    const res = await axiosInstance.delete(`/categories/${id}`);
+    return res.data;
+  }
 }
 export default categoryService;

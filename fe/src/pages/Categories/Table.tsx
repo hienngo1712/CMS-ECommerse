@@ -51,13 +51,13 @@ const TableCategories = ({
       title: "Hành động",
       dataIndex: "actions",
       key: "actions",
-      render: (text: string) => (
+      render: (text: string, record: any) => (
         <>
           <TableActions
             showEdit
             showDelete
-            onEdit={() => {}}
-            onDelete={() => {}}
+            onEdit={() => onEdit(record.id)}
+            onDelete={() => onDelete(record.id)}
           />
         </>
       ),

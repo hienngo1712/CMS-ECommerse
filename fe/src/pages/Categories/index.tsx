@@ -3,11 +3,12 @@ import { ThemeContext } from "../../contexts/ThemeContext";
 import AppFilters, {
   type FilterConfig,
 } from "../../components/common/AppFilters.tsx";
-import { Button } from "antd";
+import { Button, message } from "antd";
 import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
 import categoryService from "../../services/CategoryService.ts";
 import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
+// import { useDebounce } from "use-debounce";
 
 type Props = {};
 
@@ -52,20 +53,22 @@ const CategoriesPage = (props: Props) => {
   });
 
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
+  // const debounceSearch = useDebounce(query.search, 400); //chỗ này là nguyên nhân khiến API bị call liên tục
+  const [idEditing, setIdEditing] = useState(0);
   const handleGetValueFilter = (values: Record<string, any>) => {
     console.log(values);
     setQuery((prev) => ({
-      ...prev,
       page: 1,
       search: values?.search,
       isActive: values?.isActive,
+      limit: prev.limit,
     }));
   };
+  // fetch data
   const fetchCategories = async () => {
     try {
       setIsLoading(true);
       const res = await categoryService.getCategories(query);
-      console.log("Check res.data", res.data);
 
       setCategories(res.data);
       setQuery((prev) => ({
@@ -80,11 +83,10 @@ const CategoriesPage = (props: Props) => {
       console.log(error);
     }
   };
+  // Open modal
   const handleToggleModal = () => {
     setIsOpen(!isOpen);
   };
-  console.log("Categories", categories);
-  console.log("Query", query);
 
   const handleChangePageSizeTable = (newPage: number, newSize: number) => {
     console.log(newPage, newSize);
@@ -93,6 +95,24 @@ const CategoriesPage = (props: Props) => {
       page: newPage,
       limit: newSize,
     }));
+  };
+  // button Edit
+  const handleEditCategory = (id: number) => {
+    setIsOpen(true);
+    console.log(id);
+    setIdEditing(id);
+  };
+  // button Delete
+  const handleDeleteCategory = async (id: number) => {
+    await categoryService
+      .deleteCategory(id)
+      .then(() => {
+        fetchCategories();
+        message.success("Xóa danh mục thành công");
+      })
+      .catch((error) => {
+        message.error("Xóa danh mục thất bại");
+      });
   };
   useEffect(() => {
     fetchCategories();
@@ -124,8 +144,8 @@ const CategoriesPage = (props: Props) => {
         total={query?.meta?.total ?? 0}
         categories={categories || []}
         onPageChange={handleChangePageSizeTable}
-        onDelete={() => {}}
-        onEdit={() => {}}
+        onDelete={handleDeleteCategory}
+        onEdit={handleEditCategory}
       />
       <ModalCategories
         open={isOpen}
@@ -133,6 +153,7 @@ const CategoriesPage = (props: Props) => {
         onSuccess={() => {
           fetchCategories();
         }}
+        categoryId={idEditing}
       />
     </div>
   );

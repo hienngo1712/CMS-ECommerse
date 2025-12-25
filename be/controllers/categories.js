@@ -68,6 +68,65 @@ const categoriesControllers = {
         error: "Internal server error",
       });
     }
+  },
+  getCategoryById: async (req,res) =>{
+    try{
+      const {id} = req.params;
+      const category = await prisma.category.findUnique({
+        where: {
+          id: Number(id),
+        },
+      });
+      if(!category){
+        return res.status(404).json({
+          message: "Category not found"
+        })
+      }
+      res.json(category);
+    }catch(error){
+    console.error(error);
+      res.status(400).json({
+        error,
+      });
+    }
+  },
+  updateCategory: async (req,res) =>{
+    try{
+      const {id} = req.params;
+      const {name,slug,isActive} = req.body;
+      const updated = await prisma.category.update({
+        where: {
+          id: Number(id)
+        },
+        data: {
+          name, slug, isActive
+        }
+      });
+      res.json(updated);
+    }catch(error){
+      console.error(error);
+      res.status(400).json({
+        error,
+      });
+    }
+  },
+  deleteCategory: async (req,res) =>{
+    try{
+      const {id} = req.params;
+      await prisma.category.delete({
+        where: {
+          id: Number(id),
+        }
+      });
+      res.json({
+        msg: "Category deleted"
+      })
+    }catch(error){
+      console.error(error);
+      res.status(400).json({
+        error,
+      });
+    }
   }
 };
 

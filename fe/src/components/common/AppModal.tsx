@@ -10,7 +10,7 @@ const AppModal: React.FC<AppModalProps> = ({ children, ...rest }) => {
   return (
     //centered căn giữa, destroyOnHidden ẩn/xóa component khỏi DOM
     //maskClosable= false giúp người dùng click ở ngoài component cũng ko mất dialog
-    <Modal centered destroyOnHidden maskClosable={false} {...rest}>
+    <Modal centered destroyOnHidden maskClosable={false} forceRender {...rest}>
       {" "}
       {children}{" "}
     </Modal>
