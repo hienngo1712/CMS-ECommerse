@@ -1,9 +1,10 @@
-import { ConfigProvider } from "antd";
+import { ConfigProvider, theme } from "antd";
 import React, { useEffect, useState } from "react";
 type ThemeContextType = {
   isDark: boolean;
   toggleTheme: () => void;
 };
+// eslint-disable-next-line react-refresh/only-export-components
 export const ThemeContext = React.createContext<ThemeContextType>({
   isDark: false,
   toggleTheme: () => {},
@@ -37,6 +38,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       <ConfigProvider
         theme={{
+          algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
           token: {
             colorText: isDark ? "#f7f7f7" : "#141414",
             fontSize: 14,
