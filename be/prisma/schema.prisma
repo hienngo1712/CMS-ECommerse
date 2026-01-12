@@ -36,7 +36,37 @@ model Product {
   isDeleted   Boolean  @default(false)
 
   categoryId Int?
-  category   Category? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category   Category?      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   // relation: khởi tạo mối quan hệ giữa các bảng cbi define
   // cascade: khi cta xóa 1 danh mục, những danh mục đó tương ứng vs sp nào thì sp đó bị xóa theo 
+  colors     ProductColor[]
+}
+
+model ProductColor {
+  id        Int    @id @default(autoincrement())
+  productId Int
+  color     String
+  colorCode String @default("#000000")
+
+  product Product             @relation(fields: [productId], references: [id])
+  images  ProductColorImage[]
+
+  variants ProductColorVariants[]
+}
+
+model ProductColorImage {
+  id       Int          @id @default(autoincrement())
+  colorId  Int
+  imageUrl String
+  order    Int
+  color    ProductColor @relation(fields: [colorId], references: [id])
+}
+
+model ProductColorVariants {
+  id      Int          @id @default(autoincrement())
+  colorId Int
+  price   Float
+  size    String
+  stock   Int
+  color   ProductColor @relation(fields: [colorId], references: [id])
 }
