@@ -54,65 +54,86 @@ const productsControllers = {
 
   getProducts: async (req, res) => {
     try {
-      const { page = 1, limit = 10, search, categoryId } = req.query;
+      let page = parseInt(req.query.page, 10) || 1;
+      let limit = parseInt(req.query.limit, 10) || 10;
+      const { search, categoryId, isActive } = req.query;
 
-      // Chuyển đổi kiểu dữ liệu cho phân trang
-      const skip = (parseInt(page) - 1) * parseInt(limit);
-      const take = parseInt(limit);
+      if (page < 1) page = 1;
+      if (limit < 1) limit = 10;
+      if (limit > 100) limit = 100;
 
-      // Xây dựng điều kiện lọc (Where clause)
-      const where = {};
+      const where = {
+        isDeleted: false,
+        ...(search && {
+          name: { contains: search, mode: "insensitive" },
+        }),
+        ...(categoryId && { categoryId: parseInt(categoryId, 10) }),
+        ...(isActive !== undefined &&
+          isActive !== "" && { isActive: isActive === "true" }),
+      };
 
-      if (search) {
-        where.name = {
-          contains: search,
-          mode: 'insensitive', // Tìm kiếm không phân biệt hoa thường
-        };
-      }
-
-      if (categoryId) {
-        // Query string luôn là string, Prisma yêu cầu Int
-        where.categoryId = parseInt(categoryId, 10);
-      }
-
-      // Thực hiện truy vấn song song: lấy dữ liệu và đếm tổng số bản ghi
       const [products, total] = await Promise.all([
         prisma.product.findMany({
           where,
-          skip,
-          take,
+          skip: (page - 1) * limit,
+          take: limit,
           include: {
-            category: true, // Bao gồm thông tin danh mục nếu cần
+            category: true,
             colors: {
               include: {
-                images: {
-                  orderBy: { order: 'asc' }
-                },
+                images: { orderBy: { order: "asc" } },
                 variants: true,
               },
             },
           },
-          orderBy: {
-            createdAt: 'desc', // Sản phẩm mới nhất lên đầu
-          },
+          orderBy: { createdAt: "desc" },
         }),
-        prisma.product.count({ where })
+        prisma.product.count({ where }),
       ]);
 
-      res.status(200).json({
+      res.json({
         data: products,
-        pagination: {
-          totalItems: total,
-          totalPages: Math.ceil(total / take),
-          currentPage: parseInt(page),
-          limit: take
-        }
+        meta: {
+          total,
+          page,
+          limit,
+          pageCount: Math.ceil(total / limit),
+        },
       });
     } catch (error) {
       console.error("Get products error", error);
-      res.status(500).json({
-        error: "Internal server errors"
+      res.status(500).json({ error: "Internal server errors" });
+    }
+  },
+
+  getProductById: async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
+
+      const product = await prisma.product.findFirst({
+        where: { id, isDeleted: false },
+        include: {
+          category: true,
+          colors: {
+            include: {
+              images: { orderBy: { order: "asc" } },
+              variants: true,
+            },
+          },
+        },
       });
+
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      res.json(product);
+    } catch (error) {
+      console.error("Get product by id error", error);
+      res.status(500).json({ error: "Internal server errors" });
     }
   },
 
