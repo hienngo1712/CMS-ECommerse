@@ -31,8 +31,15 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
       onClose();
       onSuccess();
     } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.data?.error) {
-        message.error(String(error.response.data.error));
+      // Chỉ hiện nguyên văn thông báo của server khi đó là lỗi client (4xx).
+      // 5xx trả chuỗi tiếng Anh nội bộ, không nên đưa cho người dùng đọc.
+      const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+      const serverError = axios.isAxiosError(error)
+        ? error.response?.data?.error
+        : undefined;
+
+      if (status && status >= 400 && status < 500 && serverError) {
+        message.error(String(serverError));
       } else {
         console.error(error);
         message.error("Lưu danh mục thất bại");

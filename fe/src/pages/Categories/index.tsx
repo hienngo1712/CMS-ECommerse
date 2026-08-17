@@ -8,7 +8,6 @@ import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
 import categoryService from "../../services/CategoryService.ts";
 import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
-// import { useDebounce } from "use-debounce";
 
 const categoriesFilter: FilterConfig[] = [
   {
@@ -51,7 +50,7 @@ const CategoriesPage = () => {
   });
 
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
-  // const debounceSearch = useDebounce(query.search, 400); //chỗ này là nguyên nhân khiến API bị call liên tục
+  // Debounce nằm trong AppFilters, không cần xử lý ở đây
   const [idEditing, setIdEditing] = useState(0);
   const handleGetValueFilter = (values: Record<string, any>) => {
     console.log(values);

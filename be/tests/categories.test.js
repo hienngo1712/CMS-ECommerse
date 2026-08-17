@@ -83,3 +83,29 @@ test("POST /api/categories trả 400 khi slug trùng với danh mục đã xóa 
   assert.equal(res.status, 400);
   assert.equal(res.body.error, "Slug đã tồn tại");
 });
+
+// QĐ-7: id không parse được là lỗi CLIENT nên phải 400. Trước đây `Number("abc")`
+// = NaN đi thẳng vào Prisma và rơi xuống nhánh 500.
+test("id không phải số trả 400 ở cả GET, PUT và DELETE", async () => {
+  const getRes = await request(app).get("/api/categories/abc");
+  assert.equal(getRes.status, 400);
+  assert.equal(getRes.body.error, "id không hợp lệ");
+
+  const putRes = await request(app)
+    .put("/api/categories/abc")
+    .send({ name: "X", slug: "x", isActive: true });
+  assert.equal(putRes.status, 400);
+
+  const deleteRes = await request(app).delete("/api/categories/abc");
+  assert.equal(deleteRes.status, 400);
+});
+
+// QĐ-7: envelope lỗi duy nhất `{ error }` — trước đây 3 nhánh 404 của Categories
+// trả `{ message }` nên FE phải đọc khác nhau tuỳ endpoint.
+test("404 của Categories dùng trường `error`, không phải `message`", async () => {
+  const res = await request(app).get("/api/categories/999999");
+
+  assert.equal(res.status, 404);
+  assert.equal(res.body.error, "Category not found");
+  assert.equal(res.body.message, undefined);
+});

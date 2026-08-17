@@ -94,6 +94,23 @@ Không dựng jsdom + Testing Library trong phase này. Chỉ tách logic tính 
 `productUtils.ts` và test bằng Vitest. UI kiểm bằng tay theo checklist.
 **Đánh đổi:** không có regression test cho component. Chấp nhận ở giai đoạn này.
 
+### QĐ-7. Một envelope lỗi duy nhất cho mọi resource
+
+Ban đầu `products.js` và `categories.js` trả lỗi khác nhau: 404 dùng `error` ở file này và `message`
+ở file kia, lỗi không lường trước trả `500` ở đây và `400` ở đó, chuỗi thì `"Internal server errors"`
+số nhiều vs số ít. FE phải biết đang gọi endpoint nào mới đọc được lỗi, và resource thứ ba sẽ copy
+theo file mà tác giả mở trước.
+
+**Chọn:** mọi response lỗi ở mọi resource đều là `{ error: string }`, kèm `details` khi có nhiều
+thông báo (validation). Quy ước status: `400` dữ liệu client sai · `404` không tìm thấy ·
+`409` xung đột nghiệp vụ · `500` server lỗi, và `500` **luôn** trả chuỗi cố định
+`"Internal server error"` chứ không bao giờ trả `error.message` của Prisma ra ngoài.
+Trường `error` là mã lỗi máy đọc và giữ tiếng Anh; nội dung cho người dùng đọc nằm trong `details`
+(tiếng Việt) hoặc do FE tự dựng.
+
+**Đánh đổi:** một lần đổi `message` → `error` ở 3 nhánh 404 của Categories. Không client nào đang
+đọc `message` nên không có breaking change thực tế.
+
 ## 4. Hợp đồng API (sau khi hoàn thành)
 
 Kiểu dữ liệu `Product` trả về:

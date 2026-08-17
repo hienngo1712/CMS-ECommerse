@@ -1,5 +1,6 @@
 import { Form, Input, Select, Space } from "antd";
 import React, { useState } from "react";
+import { useDebouncedCallback } from "use-debounce";
 
 type BaseFilter = {
   name: string;
@@ -30,13 +31,27 @@ type FilterProps = {
 
 const AppFilters: React.FC<FilterProps> = ({ filters, onChange }) => {
   const [values, setValues] = useState<Record<string, any>>({});
-  const handleChange = (name: string, value: any) => {
+
+  // Gõ vào ô tìm kiếm thì hoãn 400ms, nếu không mỗi ký tự là một request.
+  // Select thì bắn ngay và huỷ lần hoãn đang chờ, để giá trị vừa gõ không
+  // bay lên sau khi người dùng đã đổi lựa chọn.
+  const emitDebounced = useDebouncedCallback(
+    (next: Record<string, any>) => onChange(next),
+    400
+  );
+
+  const handleChange = (name: string, value: any, immediate = false) => {
     const newValues = {
       ...values,
       [name]: value,
     };
     setValues(newValues);
-    onChange(newValues);
+    if (immediate) {
+      emitDebounced.cancel();
+      onChange(newValues);
+    } else {
+      emitDebounced(newValues);
+    }
   };
   return (
     <Space wrap>
@@ -72,7 +87,7 @@ const AppFilters: React.FC<FilterProps> = ({ filters, onChange }) => {
                 allowClear
                 options={filter.options}
                 style={{ width: "200px" }}
-                onChange={(value) => handleChange(filter.name, value)}
+                onChange={(value) => handleChange(filter.name, value, true)}
               />
             </Form.Item>
           );

@@ -14,8 +14,10 @@ const categoriesControllers = {
       if (error.code === "P2002") {
         return res.status(400).json({ error: "Slug đã tồn tại" });
       }
-      console.log(error);
-      res.status(400).json({error: error.message});
+      console.error(error);
+      res.status(500).json({
+        error: "Internal server error",
+      });
     }
   },
 
@@ -63,7 +65,7 @@ const categoriesControllers = {
         },
       });
     } catch(error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({
         error: "Internal server error",
       });
@@ -71,16 +73,19 @@ const categoriesControllers = {
   },
   getCategoryById: async (req,res) =>{
     try{
-      const {id} = req.params;
+      const id = parseInt(req.params.id, 10);
+      if(Number.isNaN(id)){
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
       const category = await prisma.category.findFirst({
         where: {
-          id: Number(id),
+          id,
           isDeleted: false,
         },
       });
       if(!category){
         return res.status(404).json({
-          message: "Category not found"
+          error: "Category not found"
         })
       }
       res.json(category);
@@ -93,22 +98,25 @@ const categoriesControllers = {
   },
   updateCategory: async (req,res) =>{
     try{
-      const {id} = req.params;
+      const id = parseInt(req.params.id, 10);
+      if(Number.isNaN(id)){
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
       const {name,slug,isActive} = req.body;
       const existing = await prisma.category.findFirst({
         where: {
-          id: Number(id),
+          id,
           isDeleted: false,
         },
       });
       if(!existing){
         return res.status(404).json({
-          message: "Category not found"
+          error: "Category not found"
         });
       }
       const updated = await prisma.category.update({
         where: {
-          id: Number(id)
+          id
         },
         data: {
           name, slug, isActive
@@ -127,22 +135,25 @@ const categoriesControllers = {
   },
   deleteCategory: async (req,res) =>{
     try{
-      const {id} = req.params;
+      const id = parseInt(req.params.id, 10);
+      if(Number.isNaN(id)){
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
       const existing = await prisma.category.findFirst({
         where: {
-          id: Number(id),
+          id,
           isDeleted: false,
         },
       });
       if(!existing){
         return res.status(404).json({
-          message: "Category not found"
+          error: "Category not found"
         });
       }
       // Soft delete: sản phẩm thuộc danh mục này vẫn được giữ lại.
       await prisma.category.update({
         where: {
-          id: Number(id),
+          id,
         },
         data: {
           isDeleted: true,
