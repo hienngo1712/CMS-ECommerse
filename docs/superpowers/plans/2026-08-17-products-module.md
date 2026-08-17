@@ -247,7 +247,9 @@ Kỳ vọng: `pass 2`, `fail 0`. Nếu lỗi `P1001 Can't reach database server`
 cd be && npm run dev
 ```
 
-Kỳ vọng: log `SERVER running on PORT 5000`. Mở `http://localhost:5000/` thấy `API is running 123`. Dừng bằng `Ctrl+C`.
+Kỳ vọng: log `SERVER running on PORT 3002`. Mở `http://localhost:3002/` thấy `API is running 123`. Dừng bằng `Ctrl+C`.
+
+`be/.env` đặt `PORT=3002` và `fe/.env` trỏ `VITE_API_URL="http://localhost:3002/api"` — cổng thật của BE là **3002**, không phải 5000 (5000 chỉ là giá trị fallback trong `server.js` khi không có `PORT`).
 
 - [ ] **Step 10: Commit**
 

@@ -81,9 +81,15 @@ const CategoriesPage = () => {
       console.log(error);
     }
   };
-  // Open modal
-  const handleToggleModal = () => {
-    setIsOpen(!isOpen);
+  // button Tạo mới: phải reset idEditing, nếu không modal vẫn ở chế độ sửa
+  // của danh mục vừa chỉnh và bấm OK sẽ ghi đè danh mục đó
+  const handleCreateCategory = () => {
+    setIdEditing(0);
+    setIsOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsOpen(false);
   };
 
   const handleChangePageSizeTable = (newPage: number, newSize: number) => {
@@ -131,7 +137,7 @@ const CategoriesPage = () => {
           filters={categoriesFilter}
           onChange={handleGetValueFilter}
         />
-        <Button onClick={handleToggleModal} type={"primary"}>
+        <Button onClick={handleCreateCategory} type={"primary"}>
           + Tạo danh mục mới{" "}
         </Button>
       </div>
@@ -147,7 +153,7 @@ const CategoriesPage = () => {
       />
       <ModalCategories
         open={isOpen}
-        onClose={handleToggleModal}
+        onClose={handleCloseModal}
         onSuccess={() => {
           fetchCategories();
         }}

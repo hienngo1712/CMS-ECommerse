@@ -27,17 +27,20 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
       console.log(error);
     }
   };
+  // Phụ thuộc `open`: tạo xong rồi mở lại vẫn là categoryId = 0, nếu chỉ
+  // nghe categoryId thì effect không chạy lại và form còn dữ liệu lần trước
   useEffect(() => {
+    if (!open) return;
+
     if (categoryId) {
       categoryService.getCategoryById(categoryId).then((res) => {
         form.setFieldsValue(res);
-        console.log("category id", categoryId);
       });
     } else {
       form.resetFields();
       form.setFieldsValue({ isActive: true });
     }
-  }, [categoryId, form]);
+  }, [open, categoryId, form]);
 
   return (
     <AppModal
