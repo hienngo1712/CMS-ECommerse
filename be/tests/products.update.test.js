@@ -282,3 +282,77 @@ test("PUT trả 400 khi payload sai", async () => {
   assert.equal(res.status, 400);
   assert.deepEqual(res.body.details, ["name là bắt buộc"]);
 });
+
+// Bug 3 (dangerous half): thêm size mới vào màu ĐÃ có trong DB. Trước khi sửa,
+// existingVariantMap.get("S") trả về undefined nhưng code vẫn gọi
+// tx.productColorVariants.update({ where: { id: undefined.id } }) -> TypeError -> 500.
+test("PUT thêm size mới cho màu đã có, không đụng tới các size cũ", async () => {
+  const product = await seedProduct();
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({
+      name: product.name,
+      categoryId: product.categoryId,
+      colors: [
+        {
+          color: "Đen",
+          colorCode: "#000000",
+          images: [{ imageUrl: "https://example.com/1.jpg" }],
+          variants: [
+            { size: "M", price: 100, stock: 1 },
+            { size: "L", price: 200, stock: 2 },
+            { size: "S", price: 50, stock: 5 },
+          ],
+        },
+      ],
+    });
+
+  assert.equal(res.status, 200);
+
+  const variants = await prisma.productColorVariants.findMany({ orderBy: { size: "asc" } });
+  assert.deepEqual(variants.map((v) => v.size).sort(), ["L", "M", "S"]);
+
+  const variantS = variants.find((v) => v.size === "S");
+  assert.equal(variantS.price, 50);
+  assert.equal(variantS.stock, 5);
+
+  const variantM = variants.find((v) => v.size === "M");
+  assert.equal(variantM.price, 100);
+  assert.equal(variantM.stock, 1);
+});
+
+// Bug 4: gửi một màu ĐÃ TỒN TẠI trong payload với variants rỗng phải GIỮ LẠI màu đó
+// (chỉ xóa hết size của nó), không được xóa cả màu. Bản lỗi cũ đặt
+// remainingColorMap.delete(incomingColor.color) bên trong vòng lặp variants, nên khi
+// variants rỗng, vòng lặp đó không chạy lần nào -> "Đen" không bị xóa khỏi
+// remainingColorMap -> bị coi là màu client đã bỏ đi -> bị xóa toàn bộ ở cuối.
+test("PUT gửi màu đã có với variants rỗng thì giữ lại màu, chỉ xóa hết size", async () => {
+  const product = await seedProduct();
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({
+      name: product.name,
+      categoryId: product.categoryId,
+      colors: [
+        {
+          color: "Đen",
+          colorCode: "#000000",
+          images: [],
+          variants: [],
+        },
+      ],
+    });
+
+  assert.equal(res.status, 200);
+
+  const colors = await prisma.productColor.findMany();
+  assert.equal(colors.length, 1);
+  assert.equal(colors[0].color, "Đen");
+
+  const variants = await prisma.productColorVariants.findMany({
+    where: { colorId: colors[0].id },
+  });
+  assert.equal(variants.length, 0);
+});
