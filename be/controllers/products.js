@@ -1,54 +1,70 @@
 const prisma = require("../prisma/client");
+const { validateProductPayload } = require("../validators/products");
+
+// Shape include dùng chung cho mọi response trả về một sản phẩm đầy đủ
+const PRODUCT_INCLUDE = {
+  category: true,
+  colors: {
+    include: {
+      images: { orderBy: { order: "asc" } },
+      variants: true,
+    },
+  },
+};
 
 const productsControllers = {
-  createProduct: async(req,res)=>{
+  createProduct: async (req, res) => {
     try {
-      const { name,description, categoryId, colors } = req.body;
-      if(!name || !categoryId){
+      const { name, description, categoryId, isActive, colors } = req.body;
+
+      const details = validateProductPayload(req.body);
+      if (details.length > 0) {
+        return res.status(400).json({ error: "Dữ liệu không hợp lệ", details });
+      }
+
+      const category = await prisma.category.findFirst({
+        where: { id: parseInt(categoryId, 10), isDeleted: false },
+      });
+      if (!category) {
         return res.status(400).json({
-          error: "Name and Categories are required!"
+          error: "Dữ liệu không hợp lệ",
+          details: ["categoryId không tồn tại"],
         });
       }
 
-      const products = await prisma.product.create({
-        data:{
-          name,
-          description,
-          categoryId: parseInt(categoryId, 10),
-          colors:{
-            create: (colors || []).map((c)=>({
-              color: c.color,
-              colorCode: c.colorCode,
-              images:{
-                create: (c.images || []).map((img,index) => ({
+      const product = await prisma.product.create({
+        data: {
+          name: name.trim(),
+          description: description ?? "",
+          categoryId: category.id,
+          ...(isActive !== undefined && { isActive: Boolean(isActive) }),
+          colors: {
+            create: (colors || []).map((c) => ({
+              color: c.color.trim(),
+              colorCode: c.colorCode || "#000000",
+              images: {
+                create: (c.images || []).map((img, index) => ({
                   imageUrl: img.imageUrl,
-                  order: index
-                }))
+                  order: index,
+                })),
               },
-              variants:{
-                create: (c.variants || []).map(v => ({
-                  size: v.size,
+              variants: {
+                create: (c.variants || []).map((v) => ({
+                  size: v.size.trim(),
                   price: parseFloat(v.price),
-                  stock: parseInt(v.stock)
-                }))
-              }
-            }))
-          }
+                  stock: parseInt(v.stock, 10),
+                })),
+              },
+            })),
+          },
         },
-        include:{
-          colors:{
-            include:{
-              variants: true,
-            }
-          }
-        }
+        include: PRODUCT_INCLUDE,
       });
-      res.status(201).json(products);
+
+      res.status(201).json(product);
     } catch (error) {
       console.error("Create product error", error);
-      res.status(500).json({
-        error:"Internal server errors"
-      })
+      res.status(500).json({ error: "Internal server errors" });
     }
   },
 
@@ -77,15 +93,7 @@ const productsControllers = {
           where,
           skip: (page - 1) * limit,
           take: limit,
-          include: {
-            category: true,
-            colors: {
-              include: {
-                images: { orderBy: { order: "asc" } },
-                variants: true,
-              },
-            },
-          },
+          include: PRODUCT_INCLUDE,
           orderBy: { createdAt: "desc" },
         }),
         prisma.product.count({ where }),
@@ -115,15 +123,7 @@ const productsControllers = {
 
       const product = await prisma.product.findFirst({
         where: { id, isDeleted: false },
-        include: {
-          category: true,
-          colors: {
-            include: {
-              images: { orderBy: { order: "asc" } },
-              variants: true,
-            },
-          },
-        },
+        include: PRODUCT_INCLUDE,
       });
 
       if (!product) {
