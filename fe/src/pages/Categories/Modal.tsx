@@ -1,7 +1,8 @@
 import categoryService from "../../services/CategoryService";
 import AppModal from "../../components/common/AppModal";
-import { Form, Input, Switch } from "antd";
+import { Form, Input, Switch, message } from "antd";
 import { useEffect } from "react";
+import axios from "axios";
 
 type Props = {
   open: boolean;
@@ -14,8 +15,14 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
   const [form] = Form.useForm();
 
   const handleOk = async () => {
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      return; // antd đã hiển thị lỗi ngay trên form
+    }
+
+    try {
       if (categoryId) {
         await categoryService.updateCategory(categoryId, values);
       } else {
@@ -24,7 +31,12 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
       onClose();
       onSuccess();
     } catch (error) {
-      console.log(error);
+      if (axios.isAxiosError(error) && error.response?.data?.error) {
+        message.error(String(error.response.data.error));
+      } else {
+        console.error(error);
+        message.error("Lưu danh mục thất bại");
+      }
     }
   };
   // Phụ thuộc `open`: tạo xong rồi mở lại vẫn là categoryId = 0, nếu chỉ

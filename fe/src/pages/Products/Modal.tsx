@@ -21,6 +21,7 @@ const makeEmptyColor = () => ({ color: "", colorCode: "#000000", images: [], var
 const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Props) => {
   const [form] = Form.useForm<ProductPayload>();
   const [submitting, setSubmitting] = useState(false);
+  const [loadingProduct, setLoadingProduct] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -28,6 +29,10 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
     let ignore = false;
 
     if (productId) {
+      // Xóa dữ liệu sản phẩm trước đó ngay lập tức, tránh hiển thị nhầm khi
+      // đang chờ response cho productId mới (xem I-6).
+      form.resetFields();
+      setLoadingProduct(true);
       productService
         .getProductById(productId)
         .then((product) => {
@@ -54,10 +59,15 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
           console.error(error);
           message.error("Không tải được dữ liệu sản phẩm");
           onClose();
+        })
+        .finally(() => {
+          if (ignore) return;
+          setLoadingProduct(false);
         });
     } else {
       form.resetFields();
       form.setFieldsValue({ isActive: true, colors: [] });
+      setLoadingProduct(false);
     }
 
     return () => {
@@ -112,6 +122,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
       onCancel={onClose}
       onOk={handleOk}
       confirmLoading={submitting}
+      okButtonProps={{ disabled: loadingProduct }}
       okText={productId ? "Lưu" : "Tạo"}
       cancelText="Hủy"
       width={840}
