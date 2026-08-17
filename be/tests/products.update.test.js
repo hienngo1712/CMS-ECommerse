@@ -52,10 +52,11 @@ test("PUT cập nhật trường phẳng và trả về sản phẩm mới", asy
 test("PUT không gửi colors thì giữ nguyên màu và size", async () => {
   const product = await seedProduct();
 
-  await request(app)
+  const res = await request(app)
     .put(`/api/products/${product.id}`)
     .send({ name: "Tên mới", categoryId: product.categoryId });
 
+  assert.equal(res.status, 200);
   assert.equal(await prisma.productColor.count(), 1);
   assert.equal(await prisma.productColorVariants.count(), 2);
 });
@@ -283,6 +284,46 @@ test("PUT trả 400 khi payload sai", async () => {
   assert.deepEqual(res.body.details, ["name là bắt buộc"]);
 });
 
+// C-1: PUT phải ghi nhận isActive, không được ngầm bỏ qua như trước khi sửa.
+test("PUT với isActive: false thì lưu lại trạng thái false", async () => {
+  const product = await seedProduct();
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({ name: product.name, categoryId: product.categoryId, isActive: false });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.isActive, false);
+
+  const fresh = await prisma.product.findUnique({ where: { id: product.id } });
+  assert.equal(fresh.isActive, false);
+});
+
+// I-1: categoryId không tồn tại phải trả 400, không được rơi xuống Prisma FK error (500).
+test("PUT trả 400 khi categoryId không tồn tại", async () => {
+  const product = await seedProduct();
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({ name: product.name, categoryId: 999999 });
+
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body.details, ["categoryId không tồn tại"]);
+});
+
+// I-1: categoryId trỏ tới danh mục đã xóa mềm cũng phải bị chặn.
+test("PUT trả 400 khi categoryId trỏ tới danh mục đã xóa mềm", async () => {
+  const product = await seedProduct();
+  const deletedCategory = await createCategory({ isDeleted: true });
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({ name: product.name, categoryId: deletedCategory.id });
+
+  assert.equal(res.status, 400);
+  assert.deepEqual(res.body.details, ["categoryId không tồn tại"]);
+});
+
 // Bug 3 (dangerous half): thêm size mới vào màu ĐÃ có trong DB. Trước khi sửa,
 // existingVariantMap.get("S") trả về undefined nhưng code vẫn gọi
 // tx.productColorVariants.update({ where: { id: undefined.id } }) -> TypeError -> 500.
@@ -355,4 +396,37 @@ test("PUT gửi màu đã có với variants rỗng thì giữ lại màu, chỉ
     where: { colorId: colors[0].id },
   });
   assert.equal(variants.length, 0);
+});
+
+// I-5: xóa một size đã nằm trong đơn hàng (nhưng giữ nguyên màu) cũng phải bị chặn 409,
+// giống hệt trường hợp xóa cả màu.
+test("PUT trả 409 khi xóa size có variant đã nằm trong đơn hàng, dù giữ nguyên màu", async () => {
+  const product = await seedProduct();
+  const variant = await prisma.productColorVariants.findFirst({ where: { size: "M" } });
+  const order = await prisma.order.create({ data: { totalAmount: 100 } });
+  await prisma.orderItem.create({
+    data: { orderId: order.id, productVariantId: variant.id, quantity: 1, price: 100 },
+  });
+
+  const res = await request(app)
+    .put(`/api/products/${product.id}`)
+    .send({
+      name: product.name,
+      categoryId: product.categoryId,
+      colors: [
+        {
+          color: "Đen",
+          colorCode: "#000000",
+          images: [{ imageUrl: "https://example.com/1.jpg" }],
+          variants: [{ size: "L", price: 200, stock: 2 }],
+        },
+      ],
+    });
+
+  assert.equal(res.status, 409);
+  assert.deepEqual(res.body.details, [{ color: "Đen", variants: ["M"] }]);
+
+  // Size bị chặn phải còn nguyên trong DB, không bị xóa âm thầm.
+  const stillExists = await prisma.productColorVariants.findUnique({ where: { id: variant.id } });
+  assert.ok(stillExists);
 });

@@ -11,6 +11,9 @@ const categoriesControllers = {
       });
       res.send(newCategory);
     } catch (error){
+      if (error.code === "P2002") {
+        return res.status(400).json({ error: "Slug đã tồn tại" });
+      }
       console.log(error);
       res.status(400).json({error: error.message});
     }
@@ -39,7 +42,6 @@ const categoriesControllers = {
             isActive: isActive === "true",
           }),
       }
-      console.log(where);
       const [categories, total] = await Promise.all([
         prisma.category.findMany({
           skip,
@@ -51,8 +53,6 @@ const categoriesControllers = {
         }),
         prisma.category.count({where}),
       ]);
-      console.log(categories);
-      console.log(total);
       res.json({
         data: categories,
         meta:{
@@ -86,8 +86,8 @@ const categoriesControllers = {
       res.json(category);
     }catch(error){
     console.error(error);
-      res.status(400).json({
-        error,
+      res.status(500).json({
+        error: "Internal server error",
       });
     }
   },
@@ -116,9 +116,12 @@ const categoriesControllers = {
       });
       res.json(updated);
     }catch(error){
+      if (error.code === "P2002") {
+        return res.status(400).json({ error: "Slug đã tồn tại" });
+      }
       console.error(error);
-      res.status(400).json({
-        error,
+      res.status(500).json({
+        error: "Internal server error",
       });
     }
   },
@@ -150,8 +153,8 @@ const categoriesControllers = {
       })
     }catch(error){
       console.error(error);
-      res.status(400).json({
-        error,
+      res.status(500).json({
+        error: "Internal server error",
       });
     }
   }

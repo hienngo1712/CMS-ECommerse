@@ -69,3 +69,17 @@ test("PUT /api/categories/:id trả 404 với danh mục đã xóa mềm", async
 
   assert.equal(res.status, 404);
 });
+
+// I-3: slug là unique nhưng danh mục xóa mềm vẫn giữ slug cũ mãi mãi, tạo mới trùng
+// slug phải trả 400 rõ ràng thay vì P2002 rơi xuống lỗi chung chung.
+test("POST /api/categories trả 400 khi slug trùng với danh mục đã xóa mềm", async () => {
+  const category = await createCategory({ slug: "ao" });
+  await request(app).delete(`/api/categories/${category.id}`);
+
+  const res = await request(app)
+    .post("/api/categories")
+    .send({ name: "Áo mới", slug: "ao", isActive: true });
+
+  assert.equal(res.status, 400);
+  assert.equal(res.body.error, "Slug đã tồn tại");
+});

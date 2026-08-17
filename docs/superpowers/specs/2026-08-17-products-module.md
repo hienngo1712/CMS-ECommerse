@@ -121,6 +121,8 @@ Kiểu dữ liệu `Product` trả về:
 }
 ```
 
+Trường `category` lồng trong `Product` luôn được chiếu (project) còn `{ id, name, slug }`, kể cả khi danh mục cha đã bị xóa mềm.
+
 | Method | Path | Query / Body | Thành công | Lỗi |
 |---|---|---|---|---|
 | GET | `/api/products` | `page`, `limit`, `search`, `categoryId`, `isActive` | `200 {data, meta}` | `500` |
@@ -131,7 +133,7 @@ Kiểu dữ liệu `Product` trả về:
 
 `meta` = `{ total, page, limit, pageCount }` — giống hệt Categories.
 
-`409` chỉ phát sinh ở `PUT` khi client cố xóa một màu mà variant của nó đã nằm trong `OrderItem`:
+`409` chỉ phát sinh ở `PUT` khi client cố xóa một màu, hoặc một size trong một màu vẫn còn giữ lại, mà variant tương ứng đã nằm trong `OrderItem`:
 
 ```json
 {
@@ -237,7 +239,7 @@ Module coi là xong khi tất cả các mục dưới đây đúng:
    - Sửa: đổi tên, xóa 1 size, thêm 1 màu → reload thấy đúng, không sinh bản ghi trùng.
    - Xóa sản phẩm → biến mất khỏi bảng, nhưng bản ghi vẫn còn trong DB với `isDeleted = true`.
    - Filter theo danh mục và search theo tên trả đúng kết quả, phân trang đúng.
-5. Không endpoint nào trả về sản phẩm/danh mục có `isDeleted = true`.
+5. Không endpoint nào trả về sản phẩm/danh mục top-level có `isDeleted = true`; `category` lồng trong `Product` tuân theo phép chiếu ở §4 nên không mang trường `isDeleted`.
 
 ## 9. Rủi ro
 

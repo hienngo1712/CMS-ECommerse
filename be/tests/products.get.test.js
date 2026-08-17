@@ -134,3 +134,18 @@ test("GET /api/products/:id trả 400 khi id không phải số", async () => {
 
   assert.equal(res.status, 400);
 });
+
+// I-2: category lồng trong Product phải được rút gọn, không được lộ isDeleted của danh mục.
+test("GET /api/products không lộ isDeleted của category đã bị xóa mềm", async () => {
+  const product = await createProduct();
+  await prisma.category.update({
+    where: { id: product.categoryId },
+    data: { isDeleted: true },
+  });
+
+  const res = await request(app).get("/api/products");
+
+  assert.equal(res.body.data.length, 1);
+  assert.ok(res.body.data[0].category.name);
+  assert.equal("isDeleted" in res.body.data[0].category, false);
+});

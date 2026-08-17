@@ -3,7 +3,7 @@ const { validateProductPayload } = require("../validators/products");
 
 // Shape include dùng chung cho mọi response trả về một sản phẩm đầy đủ
 const PRODUCT_INCLUDE = {
-  category: true,
+  category: { select: { id: true, name: true, slug: true } },
   colors: {
     include: {
       images: { orderBy: { order: "asc" } },
@@ -11,6 +11,12 @@ const PRODUCT_INCLUDE = {
     },
   },
 };
+
+// Dùng chung cho createProduct và updateProduct: categoryId phải tồn tại và chưa bị xóa mềm.
+const findActiveCategory = (categoryId) =>
+  prisma.category.findFirst({
+    where: { id: parseInt(categoryId, 10), isDeleted: false },
+  });
 
 const productsControllers = {
   createProduct: async (req, res) => {
@@ -22,9 +28,7 @@ const productsControllers = {
         return res.status(400).json({ error: "Dữ liệu không hợp lệ", details });
       }
 
-      const category = await prisma.category.findFirst({
-        where: { id: parseInt(categoryId, 10), isDeleted: false },
-      });
+      const category = await findActiveCategory(categoryId);
       if (!category) {
         return res.status(400).json({
           error: "Dữ liệu không hợp lệ",
@@ -144,7 +148,7 @@ const productsControllers = {
         return res.status(400).json({ error: "id không hợp lệ" });
       }
 
-      const { name, description, categoryId, colors } = req.body;
+      const { name, description, categoryId, isActive, colors } = req.body;
 
       const details = validateProductPayload(req.body);
       if (details.length > 0) {
@@ -158,15 +162,24 @@ const productsControllers = {
         return res.status(404).json({ error: "Product not found" });
       }
 
+      const category = await findActiveCategory(categoryId);
+      if (!category) {
+        return res.status(400).json({
+          error: "Dữ liệu không hợp lệ",
+          details: ["categoryId không tồn tại"],
+        });
+      }
+
       const product = await prisma.$transaction(async (tx) => {
         await tx.product.update({
           where: {
             id: productId
           },
           data: {
-            name,
+            name: name.trim(),
             description,
-            categoryId: categoryId === undefined ? undefined : parseInt(categoryId, 10)
+            categoryId: category.id,
+            ...(isActive !== undefined && { isActive: Boolean(isActive) }),
           }
         });
 
@@ -201,15 +214,19 @@ const productsControllers = {
             remainingColorMap.set(color.color, color);
           });
 
+          // Size bị chặn xóa vì variant đã nằm trong đơn hàng, gom theo tên màu.
+          const blockedSizesByColor = new Map();
+
           for(const incomingColor of colors){
-            const existingColor = remainingColorMap.get(incomingColor.color);
-            remainingColorMap.delete(incomingColor.color);
+            const colorKey = incomingColor.color.trim();
+            const existingColor = remainingColorMap.get(colorKey);
+            remainingColorMap.delete(colorKey);
 
             if(!existingColor){
               await tx.productColor.create({
                 data: {
                   productId,
-                  color: incomingColor.color,
+                  color: colorKey,
                   colorCode: incomingColor.colorCode || "#000000",
                   images: {
                     create: (incomingColor.images || []).map((img, index) => ({
@@ -219,7 +236,7 @@ const productsControllers = {
                   },
                   variants: {
                     create: (incomingColor.variants || []).map((v) => ({
-                      size: v.size,
+                      size: v.size.trim(),
                       price: parseFloat(v.price),
                       stock: parseInt(v.stock, 10),
                     }))
@@ -260,21 +277,29 @@ const productsControllers = {
             });
 
             const incomingVariantSizes = new Set(
-              (incomingColor.variants || []).map((v)=> v.size)
+              (incomingColor.variants || []).map((v)=> v.size.trim())
             );
 
             for(const existingVariant of existingColor.variants) {
-              if(!incomingVariantSizes.has(existingVariant.size) && !variantIdsInOrders.has(existingVariant.id)) {
-                 await tx.productColorVariants.delete({
-                  where: {
-                    id: existingVariant.id,
-                  },
-                 });
+              if(incomingVariantSizes.has(existingVariant.size)) continue;
+
+              if(variantIdsInOrders.has(existingVariant.id)) {
+                const sizes = blockedSizesByColor.get(existingColor.color) || [];
+                sizes.push(existingVariant.size);
+                blockedSizesByColor.set(existingColor.color, sizes);
+                continue;
               }
+
+              await tx.productColorVariants.delete({
+                where: {
+                  id: existingVariant.id,
+                },
+              });
             }
 
             for (const incomingVariant of incomingColor.variants || []){
-              const existingVariant = existingVariantMap.get(incomingVariant.size);
+              const sizeKey = incomingVariant.size.trim();
+              const existingVariant = existingVariantMap.get(sizeKey);
 
               if(existingVariant) {
                 await tx.productColorVariants.update({
@@ -290,7 +315,7 @@ const productsControllers = {
                 await tx.productColorVariants.create({
                   data: {
                     colorId: existingColor.id,
-                    size: incomingVariant.size,
+                    size: sizeKey,
                     price: parseFloat(incomingVariant.price),
                     stock: parseInt(incomingVariant.stock, 10),
                   }
@@ -316,6 +341,17 @@ const productsControllers = {
 
             }
           }
+
+          // Gộp size bị chặn (màu vẫn còn) vào cùng payload 409 với màu bị chặn hoàn toàn.
+          for(const [colorName, sizes] of blockedSizesByColor) {
+            const existingEntry = colorsBlockedByOrders.find((e) => e.color === colorName);
+            if(existingEntry) {
+              existingEntry.variants = [...new Set([...existingEntry.variants, ...sizes])];
+            } else {
+              colorsBlockedByOrders.push({ color: colorName, variants: sizes });
+            }
+          }
+
           // Trả lỗi chặn khi user cố tình xóa sản phẩm khách hàng đã đặt
           if(colorsBlockedByOrders.length > 0) {
             throw new Error(
