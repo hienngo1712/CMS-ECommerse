@@ -1,12 +1,11 @@
-import { Avatar, Dropdown, Layout, Menu } from "antd";
+import { Avatar, Dropdown, Layout } from "antd";
 import { BulbOutlined, MoonOutlined, UserOutlined } from "@ant-design/icons";
 import { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
 
 const { Header } = Layout;
-type Props = {};
 
-const AppHeader = (props: Props) => {
+const AppHeader = () => {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const menuItems = [
     {

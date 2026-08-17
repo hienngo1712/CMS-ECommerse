@@ -15,7 +15,7 @@ const productsControllers = {
         data:{
           name,
           description,
-          categoryId,
+          categoryId: parseInt(categoryId, 10),
           colors:{
             create: (colors || []).map((c)=>({
               color: c.color,
@@ -50,6 +50,290 @@ const productsControllers = {
       res.status(500).json({
         error:"Internal server errors"
       })
+    }
+  },
+
+  getProducts: async (req, res) => {
+    try {
+      const { page = 1, limit = 10, search, categoryId } = req.query;
+
+      // Chuyển đổi kiểu dữ liệu cho phân trang
+      const skip = (parseInt(page) - 1) * parseInt(limit);
+      const take = parseInt(limit);
+
+      // Xây dựng điều kiện lọc (Where clause)
+      const where = {};
+
+      if (search) {
+        where.name = {
+          contains: search,
+          mode: 'insensitive', // Tìm kiếm không phân biệt hoa thường
+        };
+      }
+
+      if (categoryId) {
+        // Query string luôn là string, Prisma yêu cầu Int
+        where.categoryId = parseInt(categoryId, 10);
+      }
+
+      // Thực hiện truy vấn song song: lấy dữ liệu và đếm tổng số bản ghi
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where,
+          skip,
+          take,
+          include: {
+            category: true, // Bao gồm thông tin danh mục nếu cần
+            colors: {
+              include: {
+                images: {
+                  orderBy: { order: 'asc' }
+                },
+                variants: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc', // Sản phẩm mới nhất lên đầu
+          },
+        }),
+        prisma.product.count({ where })
+      ]);
+
+      res.status(200).json({
+        data: products,
+        pagination: {
+          totalItems: total,
+          totalPages: Math.ceil(total / take),
+          currentPage: parseInt(page),
+          limit: take
+        }
+      });
+    } catch (error) {
+      console.error("Get products error", error);
+      res.status(500).json({
+        error: "Internal server errors"
+      });
+    }
+  },
+
+  updateProduct: async (req, res) => {
+    try {
+      const productId = parseInt(req.params.id, 10);
+      const { name, description, categoryId, colors } = req.body;
+
+      const product = await prisma.$transaction(async (tx) => {
+        await tx.product.update({
+          where: {
+            id: productId
+          },
+          data: {
+            name,
+            description,
+            categoryId: categoryId === undefined ? undefined : parseInt(categoryId, 10)
+          }
+        });
+
+        if(colors){
+          const existingColors = await tx.productColor.findMany({
+            where: {
+              productId
+            },
+            include:{
+              variants:{
+                include:{
+                  orderItems: true
+                },
+              },
+              images: true,
+            },
+          });
+
+          const variantIdsInOrders = new Set();
+
+          existingColors.forEach((color) => {
+            color.variants.forEach((variant) => {
+              if(variant.orderItems.length > 0){
+                variantIdsInOrders.add(variant.id);
+              }
+            });
+          });
+
+          // Màu nào còn sót lại trong map sau vòng lặp là màu client đã bỏ đi
+          const remainingColorMap = new Map();
+          existingColors.forEach((color)=>{
+            remainingColorMap.set(color.color, color);
+          });
+
+          for(const incomingColor of colors){
+            const existingColor = remainingColorMap.get(incomingColor.color);
+            remainingColorMap.delete(incomingColor.color);
+
+            if(!existingColor){
+              await tx.productColor.create({
+                data: {
+                  productId,
+                  color: incomingColor.color,
+                  colorCode: incomingColor.colorCode || "#000000",
+                  images: {
+                    create: (incomingColor.images || []).map((img, index) => ({
+                      imageUrl: img.imageUrl,
+                      order: index,
+                    })),
+                  },
+                  variants: {
+                    create: (incomingColor.variants || []).map((v) => ({
+                      size: v.size,
+                      price: parseFloat(v.price),
+                      stock: parseInt(v.stock, 10),
+                    }))
+                  }
+                }
+              });
+              continue;
+            }
+
+            await tx.productColorImage.deleteMany({
+              where:{
+                colorId: existingColor.id,
+              },
+            });
+
+            if(incomingColor.images?.length){
+              await tx.productColorImage.createMany({
+                data: incomingColor.images.map((img,index) => ({
+                  colorId: existingColor.id,
+                  imageUrl: img.imageUrl,
+                  order: index
+                })),
+              });
+            }
+
+            await tx.productColor.update({
+              where: {
+                id: existingColor.id,
+              },
+              data: {
+                colorCode: incomingColor.colorCode || "#000000",
+              },
+            });
+
+            const existingVariantMap = new Map();
+            existingColor.variants.forEach((v)=> {
+              existingVariantMap.set(v.size, v);
+            });
+
+            const incomingVariantSizes = new Set(
+              (incomingColor.variants || []).map((v)=> v.size)
+            );
+
+            for(const existingVariant of existingColor.variants) {
+              if(!incomingVariantSizes.has(existingVariant.size) && !variantIdsInOrders.has(existingVariant.id)) {
+                 await tx.productColorVariants.delete({
+                  where: {
+                    id: existingVariant.id,
+                  },
+                 });
+              }
+            }
+
+            for (const incomingVariant of incomingColor.variants || []){
+              const existingVariant = existingVariantMap.get(incomingVariant.size);
+
+              if(existingVariant) {
+                await tx.productColorVariants.update({
+                  where: {
+                    id: existingVariant.id,
+                  },
+                  data: {
+                    price: parseFloat(incomingVariant.price),
+                    stock: parseInt(incomingVariant.stock, 10),
+                  },
+                });
+              } else {
+                await tx.productColorVariants.create({
+                  data: {
+                    colorId: existingColor.id,
+                    size: incomingVariant.size,
+                    price: parseFloat(incomingVariant.price),
+                    stock: parseInt(incomingVariant.stock, 10),
+                  }
+                })
+              }
+            }
+          }
+
+          const colorsBlockedByOrders = [];
+          const colorsToDelete = [];
+          for( const [colorName,existingColor] of remainingColorMap) {
+            const variantInOrders = existingColor.variants.filter((v) => {
+              return variantIdsInOrders.has(v.id);
+            });
+
+            if(variantInOrders.length > 0) {
+              colorsBlockedByOrders.push({
+                color: colorName,
+                variants: variantInOrders.map((v) => v.size),
+              });
+            } else {
+              colorsToDelete.push(existingColor);
+
+            }
+          }
+          // Trả lỗi chặn khi user cố tình xóa sản phẩm khách hàng đã đặt
+          if(colorsBlockedByOrders.length > 0) {
+            throw new Error(
+              `ORDERED_VARIANTS_EXIST:${JSON.stringify(colorsBlockedByOrders)}`
+            )
+          }
+          //Xóa an toàn các bảng con trước khi xóa màu
+          for(const color of colorsToDelete) {
+            await tx.productColorVariants.deleteMany({
+              where: {
+                colorId: color.id,
+              },
+            });
+            await tx.productColorImage.deleteMany({
+              where: {
+                colorId: color.id,
+              },
+            });
+            await tx.productColor.delete({
+              where: {
+                id: color.id,
+              },
+            });
+          }
+        }
+
+        // Trả về dữ liệu sản phẩm sau khi update để phản hồi
+        return tx.product.findUnique({
+          where: {
+            id: productId,
+          },
+          include: {
+            colors: {
+              include: {
+                variants: true,
+                images: true,
+              }
+            }
+          }
+        })
+      })
+
+      res.status(200).json(product);
+    } catch (error) {
+      if(typeof error.message === "string" && error.message.startsWith("ORDERED_VARIANTS_EXIST:")){
+        return res.status(409).json({
+          error: "Không thể xóa màu/size đã tồn tại trong đơn hàng",
+          details: JSON.parse(error.message.slice("ORDERED_VARIANTS_EXIST:".length)),
+        });
+      }
+      console.error("Update product error", error);
+      res.status(500).json({
+        error: "Internal server errors"
+      });
     }
   },
 };

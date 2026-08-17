@@ -1,4 +1,4 @@
-import { Popconfirm, Popover, Space, Tooltip } from "antd";
+import { Popconfirm, Space, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
 type ExtraAction = {
   icon: React.ReactNode;
@@ -22,7 +22,6 @@ const TableActions = ({
   onEdit,
   onDelete,
   onView,
-  extraActions,
 }: Props) => {
   return (
     <>

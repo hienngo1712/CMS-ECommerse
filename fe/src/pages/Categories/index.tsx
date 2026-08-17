@@ -10,8 +10,6 @@ import categoryService from "../../services/CategoryService.ts";
 import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
 // import { useDebounce } from "use-debounce";
 
-type Props = {};
-
 const categoriesFilter: FilterConfig[] = [
   {
     type: "input",
@@ -26,7 +24,7 @@ const categoriesFilter: FilterConfig[] = [
     options: [
       {
         label: "Tất cả",
-        value: 0,
+        value: "",
       },
       {
         label: "Hoạt động",
@@ -41,7 +39,7 @@ const categoriesFilter: FilterConfig[] = [
   },
 ];
 
-const CategoriesPage = (props: Props) => {
+const CategoriesPage = () => {
   const { isDark } = useContext(ThemeContext);
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -110,7 +108,7 @@ const CategoriesPage = (props: Props) => {
         fetchCategories();
         message.success("Xóa danh mục thành công");
       })
-      .catch((error) => {
+      .catch(() => {
         message.error("Xóa danh mục thất bại");
       });
   };

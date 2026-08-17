@@ -1,9 +1,7 @@
 import { useState } from "react";
 import AppModal from "../../components/common/AppModal";
 
-type Props = {};
-
-const Dashboard = (props: Props) => {
+const Dashboard = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (

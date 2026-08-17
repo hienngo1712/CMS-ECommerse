@@ -1,4 +1,3 @@
-import React from "react";
 import type { CategoriesResponse } from "./Types";
 import { Table, Tag } from "antd";
 import TableActions from "../../components/common/TableAction";
@@ -51,7 +50,7 @@ const TableCategories = ({
       title: "Hành động",
       dataIndex: "actions",
       key: "actions",
-      render: (text: string, record: any) => (
+      render: (_: unknown, record: any) => (
         <>
           <TableActions
             showEdit

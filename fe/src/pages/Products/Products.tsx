@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import type { FilterConfig } from "../../components/common/AppFilters";
 import categoryService from "../../services/CategoryService";
 import type { CategoriesResponse } from "../Categories/Types";
@@ -7,11 +7,9 @@ import AppFilters from "../../components/common/AppFilters";
 import { Button } from "antd";
 import ProductsTable from "./ProductsTable";
 
-type Props = {};
-
-const Products = (props: Props) => {
+const Products = () => {
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
-  const { isModalVisivle, setIsModalVisible } = useState(false);
+  const [_isModalVisible, setIsModalVisible] = useState(false);
   const { isDark } = useContext(ThemeContext);
   const fetchCategories = async () => {
     try {

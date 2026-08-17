@@ -1,13 +1,10 @@
-import React from "react";
 import { Layout } from "antd";
 import { Content } from "antd/es/layout/layout";
 import { Outlet } from "react-router-dom";
 import AppSidebar from "./AppSidebar";
 import AppHeader from "./AppHeader";
 
-type Props = {};
-
-const AppLayout = (props: Props) => {
+const AppLayout = () => {
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <AppSidebar />
