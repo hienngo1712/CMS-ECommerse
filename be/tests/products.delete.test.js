@@ -29,8 +29,9 @@ test("DELETE đánh dấu isDeleted thay vì xóa hẳn", async () => {
 test("DELETE giữ nguyên màu và size của sản phẩm", async () => {
   const product = await createProduct();
 
-  await request(app).delete(`/api/products/${product.id}`);
+  const res = await request(app).delete(`/api/products/${product.id}`);
 
+  assert.equal(res.status, 200);
   assert.equal(await prisma.productColor.count(), 1);
   assert.equal(await prisma.productColorVariants.count(), 1);
 });

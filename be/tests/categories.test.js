@@ -58,3 +58,14 @@ test("DELETE /api/categories/:id trả 404 khi không tồn tại", async () => 
   const res = await request(app).delete("/api/categories/999999");
   assert.equal(res.status, 404);
 });
+
+test("PUT /api/categories/:id trả 404 với danh mục đã xóa mềm", async () => {
+  const category = await createCategory();
+  await request(app).delete(`/api/categories/${category.id}`);
+
+  const res = await request(app)
+    .put(`/api/categories/${category.id}`)
+    .send({ name: "Tên mới", slug: category.slug, isActive: true });
+
+  assert.equal(res.status, 404);
+});

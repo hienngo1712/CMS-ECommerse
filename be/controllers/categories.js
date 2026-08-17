@@ -95,6 +95,17 @@ const categoriesControllers = {
     try{
       const {id} = req.params;
       const {name,slug,isActive} = req.body;
+      const existing = await prisma.category.findFirst({
+        where: {
+          id: Number(id),
+          isDeleted: false,
+        },
+      });
+      if(!existing){
+        return res.status(404).json({
+          message: "Category not found"
+        });
+      }
       const updated = await prisma.category.update({
         where: {
           id: Number(id)
