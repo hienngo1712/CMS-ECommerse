@@ -25,10 +25,13 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
   useEffect(() => {
     if (!open) return;
 
+    let ignore = false;
+
     if (productId) {
       productService
         .getProductById(productId)
         .then((product) => {
+          if (ignore) return;
           form.setFieldsValue({
             name: product.name,
             description: product.description,
@@ -47,6 +50,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
           });
         })
         .catch((error) => {
+          if (ignore) return;
           console.error(error);
           message.error("Không tải được dữ liệu sản phẩm");
           onClose();
@@ -55,6 +59,10 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
       form.resetFields();
       form.setFieldsValue({ isActive: true, colors: [] });
     }
+
+    return () => {
+      ignore = true;
+    };
   }, [open, productId, form]);
 
   const handleOk = async () => {
