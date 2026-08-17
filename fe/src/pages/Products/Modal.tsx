@@ -16,7 +16,7 @@ type Props = {
   onSuccess: () => void;
 };
 
-const emptyColor = { color: "", colorCode: "#000000", images: [], variants: [] };
+const makeEmptyColor = () => ({ color: "", colorCode: "#000000", images: [], variants: [] });
 
 const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Props) => {
   const [form] = Form.useForm<ProductPayload>();
@@ -26,24 +26,31 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
     if (!open) return;
 
     if (productId) {
-      productService.getProductById(productId).then((product) => {
-        form.setFieldsValue({
-          name: product.name,
-          description: product.description,
-          categoryId: product.categoryId,
-          isActive: product.isActive,
-          colors: product.colors.map((color) => ({
-            color: color.color,
-            colorCode: color.colorCode,
-            images: color.images.map((image) => ({ imageUrl: image.imageUrl })),
-            variants: color.variants.map((variant) => ({
-              size: variant.size,
-              price: variant.price,
-              stock: variant.stock,
+      productService
+        .getProductById(productId)
+        .then((product) => {
+          form.setFieldsValue({
+            name: product.name,
+            description: product.description,
+            categoryId: product.categoryId,
+            isActive: product.isActive,
+            colors: product.colors.map((color) => ({
+              color: color.color,
+              colorCode: color.colorCode,
+              images: color.images.map((image) => ({ imageUrl: image.imageUrl })),
+              variants: color.variants.map((variant) => ({
+                size: variant.size,
+                price: variant.price,
+                stock: variant.stock,
+              })),
             })),
-          })),
+          });
+        })
+        .catch((error) => {
+          console.error(error);
+          message.error("Không tải được dữ liệu sản phẩm");
+          onClose();
         });
-      });
     } else {
       form.resetFields();
       form.setFieldsValue({ isActive: true, colors: [] });
@@ -237,7 +244,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
               ))}
 
               <Form.Item>
-                <Button type="dashed" block icon={<PlusOutlined />} onClick={() => addColor(emptyColor)}>
+                <Button type="dashed" block icon={<PlusOutlined />} onClick={() => addColor(makeEmptyColor())}>
                   Thêm màu
                 </Button>
               </Form.Item>
