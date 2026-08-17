@@ -140,7 +140,23 @@ const productsControllers = {
   updateProduct: async (req, res) => {
     try {
       const productId = parseInt(req.params.id, 10);
+      if (Number.isNaN(productId)) {
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
+
       const { name, description, categoryId, colors } = req.body;
+
+      const details = validateProductPayload(req.body);
+      if (details.length > 0) {
+        return res.status(400).json({ error: "Dữ liệu không hợp lệ", details });
+      }
+
+      const existing = await prisma.product.findFirst({
+        where: { id: productId, isDeleted: false },
+      });
+      if (!existing) {
+        return res.status(404).json({ error: "Product not found" });
+      }
 
       const product = await prisma.$transaction(async (tx) => {
         await tx.product.update({
@@ -331,14 +347,7 @@ const productsControllers = {
           where: {
             id: productId,
           },
-          include: {
-            colors: {
-              include: {
-                variants: true,
-                images: true,
-              }
-            }
-          }
+          include: PRODUCT_INCLUDE,
         })
       })
 
