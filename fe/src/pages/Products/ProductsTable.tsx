@@ -1,26 +1,28 @@
 import { Table } from "antd";
 import type { Product } from "./Type";
 import TableActions from "../../components/common/TableAction";
+import { formatPriceRange, getFirstImageUrl, getTotalStock } from "./productUtils";
 
 type Props = {
   products: Product[];
   loading?: boolean;
-  onEdit?: (product: Product) => void;
-  onDelete?: (id: number) => void;
-  pagination?: any;
-  onChange?: (pagination: any) => void;
+  total: number;
+  page: number;
+  pageSize: number;
+  onPageChange: (page: number, pageSize: number) => void;
+  onEdit: (product: Product) => void;
+  onDelete: (id: number) => void;
 };
-
-const getVariants = (record: Product) =>
-  (record.colors || []).flatMap((c) => c.variants || []);
 
 export default function ProductsTable({
   products,
   loading,
+  total,
+  page,
+  pageSize,
+  onPageChange,
   onEdit,
   onDelete,
-  pagination,
-  onChange,
 }: Props) {
   const columns = [
     {
@@ -28,17 +30,12 @@ export default function ProductsTable({
       key: "image",
       width: 80,
       render: (_: unknown, record: Product) => {
-        const imageUrl = record.colors?.[0]?.images?.[0]?.imageUrl;
+        const imageUrl = getFirstImageUrl(record);
         return imageUrl ? (
           <img
             src={imageUrl}
             alt={record.name}
-            style={{
-              width: 48,
-              height: 48,
-              objectFit: "cover",
-              borderRadius: 4,
-            }}
+            style={{ width: 48, height: 48, objectFit: "cover", borderRadius: 4 }}
           />
         ) : (
           "-"
@@ -49,25 +46,22 @@ export default function ProductsTable({
       title: "Tên sản phẩm",
       key: "name",
       dataIndex: "name",
+      render: (text: string) => <b>{text}</b>,
+    },
+    {
+      title: "Danh mục",
+      key: "category",
+      render: (_: unknown, record: Product) => record.category?.name ?? "-",
     },
     {
       title: "Giá",
       key: "price",
-      render: (_: unknown, record: Product) => {
-        const prices = getVariants(record).map((v) => v.price);
-        if (!prices.length) return "-";
-        const min = Math.min(...prices);
-        const max = Math.max(...prices);
-        return min === max
-          ? min.toLocaleString("vi-VN")
-          : `${min.toLocaleString("vi-VN")} - ${max.toLocaleString("vi-VN")}`;
-      },
+      render: (_: unknown, record: Product) => formatPriceRange(record),
     },
     {
       title: "Tổng kho",
       key: "stock",
-      render: (_: unknown, record: Product) =>
-        getVariants(record).reduce((sum, v) => sum + v.stock, 0),
+      render: (_: unknown, record: Product) => getTotalStock(record),
     },
     {
       title: "Hành động",
@@ -76,20 +70,26 @@ export default function ProductsTable({
         <TableActions
           showEdit
           showDelete
-          onEdit={() => onEdit?.(record)}
-          onDelete={() => onDelete?.(record.id)}
+          onEdit={() => onEdit(record)}
+          onDelete={() => onDelete(record.id)}
         />
       ),
     },
   ];
+
   return (
     <Table
       columns={columns}
       dataSource={products}
       loading={loading}
       rowKey="id"
-      pagination={pagination}
-      onChange={onChange}
+      pagination={{
+        current: page,
+        pageSize,
+        total,
+        showSizeChanger: true,
+        onChange: onPageChange,
+      }}
     />
   );
 }
