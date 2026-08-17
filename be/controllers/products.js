@@ -365,6 +365,33 @@ const productsControllers = {
       });
     }
   },
+
+  deleteProduct: async (req, res) => {
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (Number.isNaN(id)) {
+        return res.status(400).json({ error: "id không hợp lệ" });
+      }
+
+      const existing = await prisma.product.findFirst({
+        where: { id, isDeleted: false },
+      });
+      if (!existing) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+
+      // Soft delete: giữ lại bản ghi để không phá vỡ lịch sử đơn hàng.
+      await prisma.product.update({
+        where: { id },
+        data: { isDeleted: true },
+      });
+
+      res.json({ msg: "Product deleted" });
+    } catch (error) {
+      console.error("Delete product error", error);
+      res.status(500).json({ error: "Internal server errors" });
+    }
+  },
 };
 
 module.exports = productsControllers;

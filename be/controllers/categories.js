@@ -27,6 +27,7 @@ const categoriesControllers = {
       if (limit >100) limit = 100;
       const skip = (page - 1) * limit;
       const where = {
+        isDeleted: false,
         ...(search && {
           name: {
             contains: search,
@@ -71,9 +72,10 @@ const categoriesControllers = {
   getCategoryById: async (req,res) =>{
     try{
       const {id} = req.params;
-      const category = await prisma.category.findUnique({
+      const category = await prisma.category.findFirst({
         where: {
           id: Number(id),
+          isDeleted: false,
         },
       });
       if(!category){
@@ -112,10 +114,25 @@ const categoriesControllers = {
   deleteCategory: async (req,res) =>{
     try{
       const {id} = req.params;
-      await prisma.category.delete({
+      const existing = await prisma.category.findFirst({
         where: {
           id: Number(id),
-        }
+          isDeleted: false,
+        },
+      });
+      if(!existing){
+        return res.status(404).json({
+          message: "Category not found"
+        });
+      }
+      // Soft delete: sản phẩm thuộc danh mục này vẫn được giữ lại.
+      await prisma.category.update({
+        where: {
+          id: Number(id),
+        },
+        data: {
+          isDeleted: true,
+        },
       });
       res.json({
         msg: "Category deleted"
