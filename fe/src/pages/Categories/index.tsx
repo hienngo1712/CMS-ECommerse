@@ -1,7 +1,9 @@
 import { useContext, useEffect, useState } from "react";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import AppFilters, {
+  asText,
   type FilterConfig,
+  type FilterValues,
 } from "../../components/common/AppFilters.tsx";
 import { App, Button } from "antd";
 import TableCategories from "./Table.tsx";
@@ -53,11 +55,11 @@ const CategoriesPage = () => {
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
   // Debounce nằm trong AppFilters, không cần xử lý ở đây
   const [idEditing, setIdEditing] = useState(0);
-  const handleGetValueFilter = (values: Record<string, any>) => {
+  const handleGetValueFilter = (values: FilterValues) => {
     setQuery((prev) => ({
       page: 1,
-      search: values?.search,
-      isActive: values?.isActive,
+      search: asText(values.search),
+      isActive: asText(values.isActive),
       limit: prev.limit,
     }));
   };
@@ -117,6 +119,10 @@ const CategoriesPage = () => {
   };
   useEffect(() => {
     fetchCategories();
+    // Liệt kê từng trường là cố ý. fetchCategories ghi meta ngược lại vào query,
+    // nên phụ thuộc cả object query sẽ thành vòng lặp vô hạn; còn phụ thuộc
+    // chính fetchCategories cũng vậy vì hàm được tạo lại sau mỗi lần render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.page, query.limit, query.search, query.isActive]);
   return (
     <div

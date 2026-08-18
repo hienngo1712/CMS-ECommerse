@@ -1,7 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { App } from "antd";
 
-import AppFilters, { type FilterConfig } from "../../components/common/AppFilters";
+import AppFilters, {
+  asText,
+  type FilterConfig,
+  type FilterValues,
+} from "../../components/common/AppFilters";
 import orderService from "../../services/OrderService";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import OrdersTable from "./Table";
@@ -65,12 +69,12 @@ const OrdersPage = () => {
     }
   };
 
-  const handleFilterChange = (values: Record<string, any>) => {
+  const handleFilterChange = (values: FilterValues) => {
     setQuery((prev) => ({
       ...prev,
       page: 1,
-      search: values?.search ?? "",
-      status: values?.status ?? "",
+      search: asText(values.search),
+      status: asText(values.status),
     }));
   };
 
@@ -85,6 +89,9 @@ const OrdersPage = () => {
 
   useEffect(() => {
     fetchOrders();
+    // fetchOrders được tạo lại sau mỗi lần render nên đưa vào deps sẽ khiến
+    // effect chạy lại vô hạn. Liệt kê từng trường của query là cố ý.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.page, query.limit, query.search, query.status]);
 
   return (

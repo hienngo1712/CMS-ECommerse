@@ -50,7 +50,7 @@ const TableCategories = ({
       title: "Hành động",
       dataIndex: "actions",
       key: "actions",
-      render: (_: unknown, record: any) => (
+      render: (_: unknown, record: CategoriesResponse) => (
         <>
           <TableActions
             showEdit

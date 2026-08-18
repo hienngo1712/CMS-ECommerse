@@ -24,7 +24,7 @@ const Dashboard = () => {
         message.error("Không tải được số liệu tổng quan");
       })
       .finally(() => setLoading(false));
-  }, []);
+  }, [message]);
 
   const cardStyle = {
     background: isDark ? "#262626" : "#fff",

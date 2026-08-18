@@ -50,7 +50,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
     return () => {
       ignore = true;
     };
-  }, [open, orderId]);
+  }, [open, orderId, message]);
 
   const handleSaveStatus = async () => {
     if (!order || !nextStatus) return;

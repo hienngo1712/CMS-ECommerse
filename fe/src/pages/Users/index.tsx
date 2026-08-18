@@ -1,7 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { App, Button, Result } from "antd";
 
-import AppFilters, { type FilterConfig } from "../../components/common/AppFilters";
+import AppFilters, {
+  asText,
+  type FilterConfig,
+  type FilterValues,
+} from "../../components/common/AppFilters";
 import userService from "../../services/UserService";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import { AuthContext } from "../../contexts/AuthContext";
@@ -78,13 +82,13 @@ const UsersPage = () => {
     }
   };
 
-  const handleFilterChange = (values: Record<string, any>) => {
+  const handleFilterChange = (values: FilterValues) => {
     setQuery((prev) => ({
       ...prev,
       page: 1,
-      search: values?.search ?? "",
-      role: values?.role ?? "",
-      isActive: values?.isActive ?? "",
+      search: asText(values.search),
+      role: asText(values.role),
+      isActive: asText(values.isActive),
     }));
   };
 
@@ -118,6 +122,9 @@ const UsersPage = () => {
   useEffect(() => {
     if (!isAdmin) return;
     fetchUsers();
+    // fetchUsers được tạo lại sau mỗi lần render nên đưa vào deps sẽ khiến
+    // effect chạy lại vô hạn. Liệt kê từng trường của query là cố ý.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, query.page, query.limit, query.search, query.role, query.isActive]);
 
   // Server đã chặn bằng 403; chặn thêm ở đây để không bắn một loạt request

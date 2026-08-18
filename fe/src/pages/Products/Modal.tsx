@@ -74,7 +74,11 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
     return () => {
       ignore = true;
     };
-  }, [open, productId, form]);
+    // Cố tình KHÔNG phụ thuộc onClose: component cha truyền arrow function mới
+    // sau mỗi lần render, đưa vào deps là effect chạy lại liên tục và xoá sạch
+    // form ngay giữa lúc người dùng đang nhập.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, productId, form, message]);
 
   const handleOk = async () => {
     let values: ProductPayload;

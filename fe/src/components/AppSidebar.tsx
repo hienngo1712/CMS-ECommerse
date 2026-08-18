@@ -51,8 +51,8 @@ const AppSidebar: React.FC = () => {
         ]
       : []),
   ];
-  const handleClick = (e: any) => {
-    navigate(`/${e.key}`);
+  const handleClick = ({ key }: { key: string }) => {
+    navigate(`/${key}`);
   };
   const selectedKey = location.pathname.split("/")[1] || "dashboard";
   return (

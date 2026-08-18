@@ -1,7 +1,11 @@
 import { useContext, useEffect, useState } from "react";
 import { App, Button } from "antd";
 
-import AppFilters, { type FilterConfig } from "../../components/common/AppFilters";
+import AppFilters, {
+  asText,
+  type FilterConfig,
+  type FilterValues,
+} from "../../components/common/AppFilters";
 import categoryService from "../../services/CategoryService";
 import productService from "../../services/ProductService";
 import type { CategoriesResponse } from "../Categories/Types";
@@ -58,12 +62,12 @@ const Products = () => {
     }
   };
 
-  const handleFilterChange = (values: Record<string, any>) => {
+  const handleFilterChange = (values: FilterValues) => {
     setQuery((prev) => ({
       ...prev,
       page: 1,
-      search: values?.search ?? "",
-      categoryId: values?.categoryId ?? "",
+      search: asText(values.search),
+      categoryId: asText(values.categoryId),
     }));
   };
 
@@ -117,6 +121,9 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
+    // fetchProducts được tạo lại sau mỗi lần render nên đưa vào deps sẽ khiến
+    // effect chạy lại vô hạn. Liệt kê từng trường của query là cố ý.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query.page, query.limit, query.search, query.categoryId]);
 
   return (
