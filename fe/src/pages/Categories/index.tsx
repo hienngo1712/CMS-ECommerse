@@ -53,7 +53,6 @@ const CategoriesPage = () => {
   // Debounce nằm trong AppFilters, không cần xử lý ở đây
   const [idEditing, setIdEditing] = useState(0);
   const handleGetValueFilter = (values: Record<string, any>) => {
-    console.log(values);
     setQuery((prev) => ({
       page: 1,
       search: values?.search,
@@ -77,7 +76,7 @@ const CategoriesPage = () => {
       setIsLoading(false);
     } catch (error) {
       setIsLoading(false);
-      console.log(error);
+      console.error(error);
     }
   };
   // button Tạo mới: phải reset idEditing, nếu không modal vẫn ở chế độ sửa
@@ -92,7 +91,6 @@ const CategoriesPage = () => {
   };
 
   const handleChangePageSizeTable = (newPage: number, newSize: number) => {
-    console.log(newPage, newSize);
     setQuery((prev) => ({
       ...prev,
       page: newPage,
@@ -102,7 +100,6 @@ const CategoriesPage = () => {
   // button Edit
   const handleEditCategory = (id: number) => {
     setIsOpen(true);
-    console.log(id);
     setIdEditing(id);
   };
   // button Delete
