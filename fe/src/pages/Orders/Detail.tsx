@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Descriptions, Drawer, Select, Space, Spin, Table, Tag, message } from "antd";
+import { App, Button, Descriptions, Drawer, Select, Space, Spin, Table, Tag } from "antd";
 import axios from "axios";
 
 import orderService from "../../services/OrderService";
@@ -15,6 +15,7 @@ type Props = {
 };
 
 const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
+  const { message } = App.useApp();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [nextStatus, setNextStatus] = useState<OrderStatus | undefined>(undefined);

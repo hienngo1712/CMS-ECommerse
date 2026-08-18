@@ -1,4 +1,4 @@
-import { ConfigProvider, theme } from "antd";
+import { App as AntApp, ConfigProvider, theme } from "antd";
 import React, { useEffect, useState } from "react";
 type ThemeContextType = {
   isDark: boolean;
@@ -55,7 +55,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
           },
         }}
       >
-        {children}
+        {/* AntApp phải nằm TRONG ConfigProvider: toast lấy theme từ context,
+            gọi message.error() tĩnh thì nó dựng ngoài cây React và không thấy
+            theme, nên ở chế độ tối vẫn ra nền sáng. */}
+        <AntApp>{children}</AntApp>
       </ConfigProvider>
     </ThemeContext.Provider>
   );

@@ -23,11 +23,13 @@ Trong phạm vi:
 
 Ngoài phạm vi (ghi ra để khỏi hiểu nhầm là bỏ sót):
 
-- CRUD người dùng — menu "Users" ở sidebar hiện trỏ vào route không tồn tại,
-  vẫn để nguyên như vậy sau module này
 - Đổi mật khẩu, quên mật khẩu, refresh token
-- Phân quyền theo role. `role` được lưu và trả về nhưng chưa route nào chặn
-  theo nó
+
+Đã được làm ở module sau, ghi lại để khỏi tìm nhầm chỗ:
+
+- CRUD người dùng và phân quyền theo `role` → [module Users](./2026-08-18-users-module.md).
+  Ở thời điểm viết spec này `role` mới chỉ được lưu và trả về, chưa route nào
+  chặn theo nó; middleware `requireRole` được thêm cùng module Users
 
 ## Quyết định thiết kế
 

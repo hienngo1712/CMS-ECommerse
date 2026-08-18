@@ -10,12 +10,14 @@ import {
 import { useLocation, useNavigate } from "react-router-dom";
 import React, { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
+import { AuthContext } from "../contexts/AuthContext";
 const { Sider } = Layout;
 
 const AppSidebar: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDark } = useContext(ThemeContext);
+  const { user } = useContext(AuthContext);
   const items = [
     {
       key: "dashboard",
@@ -37,11 +39,17 @@ const AppSidebar: React.FC = () => {
       icon: <FileTextOutlined />,
       label: "Orders",
     },
-    {
-      key: "users",
-      icon: <UserOutlined />,
-      label: "Users",
-    },
+    // API trả 403 cho tài khoản không phải admin, nên hiện mục này với họ chỉ
+    // là mời bấm vào một trang báo lỗi.
+    ...(user?.role === "admin"
+      ? [
+          {
+            key: "users",
+            icon: <UserOutlined />,
+            label: "Users",
+          },
+        ]
+      : []),
   ];
   const handleClick = (e: any) => {
     navigate(`/${e.key}`);

@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Button, message } from "antd";
+import { App, Button } from "antd";
 
 import AppFilters, { type FilterConfig } from "../../components/common/AppFilters";
 import categoryService from "../../services/CategoryService";
@@ -12,6 +12,7 @@ import ModalProducts from "./Modal";
 
 const Products = () => {
   const { isDark } = useContext(ThemeContext);
+  const { message } = App.useApp();
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({

@@ -3,7 +3,7 @@ import { ThemeContext } from "../../contexts/ThemeContext";
 import AppFilters, {
   type FilterConfig,
 } from "../../components/common/AppFilters.tsx";
-import { Button, message } from "antd";
+import { App, Button } from "antd";
 import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
 import categoryService from "../../services/CategoryService.ts";
@@ -40,6 +40,7 @@ const categoriesFilter: FilterConfig[] = [
 
 const CategoriesPage = () => {
   const { isDark } = useContext(ThemeContext);
+  const { message } = App.useApp();
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState<CategoryQuery>({

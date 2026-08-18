@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { Card, Col, Row, Spin, Statistic, Table, Tag, message } from "antd";
+import { App, Card, Col, Row, Spin, Statistic, Table, Tag } from "antd";
 import { useNavigate } from "react-router-dom";
 
 import dashboardService from "../../services/DashboardService";
@@ -13,6 +13,7 @@ const Dashboard = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { message } = App.useApp();
 
   useEffect(() => {
     dashboardService

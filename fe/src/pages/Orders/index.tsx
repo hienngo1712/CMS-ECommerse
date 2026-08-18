@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { message } from "antd";
+import { App } from "antd";
 
 import AppFilters, { type FilterConfig } from "../../components/common/AppFilters";
 import orderService from "../../services/OrderService";
@@ -33,6 +33,7 @@ const ordersFilter: FilterConfig[] = [
 
 const OrdersPage = () => {
   const { isDark } = useContext(ThemeContext);
+  const { message } = App.useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
     total: 0,

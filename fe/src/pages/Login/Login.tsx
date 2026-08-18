@@ -1,5 +1,5 @@
 import { useContext, useState } from "react";
-import { Button, Card, Form, Input, Typography, message } from "antd";
+import { App, Button, Card, Form, Input, Typography } from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -14,6 +14,7 @@ const Login = () => {
   const [submitting, setSubmitting] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { message } = App.useApp();
 
   const from = (location.state as { from?: string } | null)?.from || "/dashboard";
 

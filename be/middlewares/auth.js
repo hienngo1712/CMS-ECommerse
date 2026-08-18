@@ -42,4 +42,14 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { requireAuth };
+// Dùng SAU requireAuth. 403 chứ không 401: đã biết bạn là ai, chỉ là không đủ
+// quyền — trả 401 ở đây sẽ khiến interceptor phía FE đá người dùng ra trang
+// đăng nhập dù họ đang đăng nhập hoàn toàn hợp lệ.
+const requireRole = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({ error: "Bạn không có quyền thực hiện thao tác này" });
+  }
+  next();
+};
+
+module.exports = { requireAuth, requireRole };

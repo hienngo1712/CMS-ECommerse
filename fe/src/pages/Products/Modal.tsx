@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Button, Card, Form, Input, InputNumber, Select, Space, Switch, message } from "antd";
+import { App, Button, Card, Form, Input, InputNumber, Select, Space, Switch } from "antd";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -20,6 +20,7 @@ const makeEmptyColor = () => ({ color: "", colorCode: "#000000", images: [], var
 
 const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Props) => {
   const [form] = Form.useForm<ProductPayload>();
+  const { message } = App.useApp();
   const [submitting, setSubmitting] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
 

@@ -1,6 +1,6 @@
 import categoryService from "../../services/CategoryService";
 import AppModal from "../../components/common/AppModal";
-import { Form, Input, Switch, message } from "antd";
+import { App, Form, Input, Switch } from "antd";
 import { useEffect } from "react";
 import axios from "axios";
 
@@ -13,6 +13,7 @@ type Props = {
 
 const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
   const [form] = Form.useForm();
+  const { message } = App.useApp();
 
   const handleOk = async () => {
     let values;
