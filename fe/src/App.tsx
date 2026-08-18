@@ -5,6 +5,7 @@ import Products from "./pages/Products/Products";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import CategoriesPage from "./pages/Categories";
+import OrdersPage from "./pages/Orders";
 import Login from "./pages/Login/Login";
 import RequireAuth from "./components/RequireAuth";
 
@@ -21,6 +22,7 @@ function App() {
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="category" element={<CategoriesPage />} />
                 <Route path="products" element={<Products />} />
+                <Route path="orders" element={<OrdersPage />} />
               </Route>
             </Route>
           </Routes>

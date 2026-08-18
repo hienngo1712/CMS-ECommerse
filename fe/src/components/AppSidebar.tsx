@@ -1,6 +1,7 @@
 import { Layout, Menu } from "antd";
 import {
   DashboardOutlined,
+  FileTextOutlined,
   ShoppingCartOutlined,
   ShoppingOutlined,
   UserOutlined,
@@ -30,6 +31,11 @@ const AppSidebar: React.FC = () => {
       key: "category",
       icon: <ShoppingCartOutlined />,
       label: "Category",
+    },
+    {
+      key: "orders",
+      icon: <FileTextOutlined />,
+      label: "Orders",
     },
     {
       key: "users",
