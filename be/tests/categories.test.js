@@ -3,11 +3,15 @@ const assert = require("node:assert/strict");
 
 const { prisma, resetDb } = require("./helpers/db");
 const { createCategory } = require("./helpers/factory");
+const { authHeader } = require("./helpers/auth");
 const request = require("supertest");
 const app = require("../app");
 
+let auth;
+
 beforeEach(async () => {
   await resetDb();
+  auth = await authHeader();
 });
 
 after(async () => {
@@ -17,7 +21,8 @@ after(async () => {
 test("DELETE /api/categories/:id là soft delete", async () => {
   const category = await createCategory();
 
-  const res = await request(app).delete(`/api/categories/${category.id}`);
+  const res = await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   assert.equal(res.status, 200);
   const row = await prisma.category.findUnique({ where: { id: category.id } });
@@ -30,14 +35,16 @@ test("DELETE danh mục không xóa sản phẩm thuộc danh mục đó", async
     data: { name: "SP", description: "", categoryId: category.id },
   });
 
-  await request(app).delete(`/api/categories/${category.id}`);
+  await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   assert.equal(await prisma.product.count(), 1);
 });
 
 test("GET /api/categories bỏ qua danh mục đã xóa mềm", async () => {
   const category = await createCategory();
-  await request(app).delete(`/api/categories/${category.id}`);
+  await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   const res = await request(app).get("/api/categories");
 
@@ -47,7 +54,8 @@ test("GET /api/categories bỏ qua danh mục đã xóa mềm", async () => {
 
 test("GET /api/categories/:id trả 404 với danh mục đã xóa mềm", async () => {
   const category = await createCategory();
-  await request(app).delete(`/api/categories/${category.id}`);
+  await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   const res = await request(app).get(`/api/categories/${category.id}`);
 
@@ -55,16 +63,19 @@ test("GET /api/categories/:id trả 404 với danh mục đã xóa mềm", async
 });
 
 test("DELETE /api/categories/:id trả 404 khi không tồn tại", async () => {
-  const res = await request(app).delete("/api/categories/999999");
+  const res = await request(app).delete("/api/categories/999999")
+    .set(auth);
   assert.equal(res.status, 404);
 });
 
 test("PUT /api/categories/:id trả 404 với danh mục đã xóa mềm", async () => {
   const category = await createCategory();
-  await request(app).delete(`/api/categories/${category.id}`);
+  await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   const res = await request(app)
     .put(`/api/categories/${category.id}`)
+    .set(auth)
     .send({ name: "Tên mới", slug: category.slug, isActive: true });
 
   assert.equal(res.status, 404);
@@ -74,10 +85,12 @@ test("PUT /api/categories/:id trả 404 với danh mục đã xóa mềm", async
 // slug phải trả 400 rõ ràng thay vì P2002 rơi xuống lỗi chung chung.
 test("POST /api/categories trả 400 khi slug trùng với danh mục đã xóa mềm", async () => {
   const category = await createCategory({ slug: "ao" });
-  await request(app).delete(`/api/categories/${category.id}`);
+  await request(app).delete(`/api/categories/${category.id}`)
+    .set(auth);
 
   const res = await request(app)
     .post("/api/categories")
+    .set(auth)
     .send({ name: "Áo mới", slug: "ao", isActive: true });
 
   assert.equal(res.status, 400);
@@ -93,10 +106,12 @@ test("id không phải số trả 400 ở cả GET, PUT và DELETE", async () =>
 
   const putRes = await request(app)
     .put("/api/categories/abc")
+    .set(auth)
     .send({ name: "X", slug: "x", isActive: true });
   assert.equal(putRes.status, 400);
 
-  const deleteRes = await request(app).delete("/api/categories/abc");
+  const deleteRes = await request(app).delete("/api/categories/abc")
+    .set(auth);
   assert.equal(deleteRes.status, 400);
 });
 

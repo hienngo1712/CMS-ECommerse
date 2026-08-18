@@ -3,11 +3,15 @@ const assert = require("node:assert/strict");
 
 const { prisma, resetDb } = require("./helpers/db");
 const { createCategory, createProduct } = require("./helpers/factory");
+const { authHeader } = require("./helpers/auth");
 const request = require("supertest");
 const app = require("../app");
 
+let auth;
+
 beforeEach(async () => {
   await resetDb();
+  auth = await authHeader();
 });
 
 after(async () => {
@@ -42,6 +46,7 @@ test("PUT cập nhật trường phẳng và trả về sản phẩm mới", asy
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: "Tên mới", description: "mô tả mới", categoryId: product.categoryId });
 
   assert.equal(res.status, 200);
@@ -54,6 +59,7 @@ test("PUT không gửi colors thì giữ nguyên màu và size", async () => {
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: "Tên mới", categoryId: product.categoryId });
 
   assert.equal(res.status, 200);
@@ -66,6 +72,7 @@ test("PUT cập nhật giá của size đã có, không tạo bản ghi mới", 
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -94,6 +101,7 @@ test("PUT xóa size không còn trong payload", async () => {
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -116,6 +124,7 @@ test("PUT thêm màu mới", async () => {
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -146,6 +155,7 @@ test("PUT xóa màu không còn trong payload, kể cả màu không có variant
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -168,6 +178,7 @@ test("PUT ghi lại ảnh theo đúng thứ tự mới", async () => {
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -196,6 +207,7 @@ test("PUT cập nhật colorCode của màu đã có", async () => {
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -223,6 +235,7 @@ test("PUT trả 409 khi xóa màu có variant đã nằm trong đơn hàng", asy
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -250,6 +263,7 @@ test("PUT trả 409 thì rollback toàn bộ, không đổi tên sản phẩm", 
 
   await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: "Tên đáng lẽ không được lưu",
       categoryId: product.categoryId,
@@ -267,6 +281,7 @@ test("PUT trả 404 khi sản phẩm không tồn tại", async () => {
 
   const res = await request(app)
     .put("/api/products/999999")
+    .set(auth)
     .send({ name: "X", categoryId: category.id });
 
   assert.equal(res.status, 404);
@@ -278,6 +293,7 @@ test("PUT trả 400 khi payload sai", async () => {
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: "", categoryId: product.categoryId });
 
   assert.equal(res.status, 400);
@@ -290,6 +306,7 @@ test("PUT với isActive: false thì lưu lại trạng thái false", async () =
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: product.name, categoryId: product.categoryId, isActive: false });
 
   assert.equal(res.status, 200);
@@ -305,6 +322,7 @@ test("PUT trả 400 khi categoryId không tồn tại", async () => {
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: product.name, categoryId: 999999 });
 
   assert.equal(res.status, 400);
@@ -318,6 +336,7 @@ test("PUT trả 400 khi categoryId trỏ tới danh mục đã xóa mềm", asyn
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({ name: product.name, categoryId: deletedCategory.id });
 
   assert.equal(res.status, 400);
@@ -332,6 +351,7 @@ test("PUT thêm size mới cho màu đã có, không đụng tới các size cũ
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -373,6 +393,7 @@ test("PUT gửi màu đã có với variants rỗng thì giữ lại màu, chỉ
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
@@ -410,6 +431,7 @@ test("PUT trả 409 khi xóa size có variant đã nằm trong đơn hàng, dù 
 
   const res = await request(app)
     .put(`/api/products/${product.id}`)
+    .set(auth)
     .send({
       name: product.name,
       categoryId: product.categoryId,
