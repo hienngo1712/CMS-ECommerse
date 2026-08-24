@@ -11,6 +11,14 @@ const authService = {
     const res = await axiosInstance.get<AuthUser>("/auth/me");
     return res.data;
   },
+
+  changePassword: async (currentPassword: string, newPassword: string) => {
+    const res = await axiosInstance.put<{ msg: string }>("/auth/password", {
+      currentPassword,
+      newPassword,
+    });
+    return res.data;
+  },
 };
 
 export default authService;

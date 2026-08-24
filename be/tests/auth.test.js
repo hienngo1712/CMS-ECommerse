@@ -7,11 +7,19 @@ const { spawnSync } = require("node:child_process");
 const { prisma, resetDb } = require("./helpers/db");
 const { createUser, authHeader } = require("./helpers/auth");
 const { verifyToken } = require("../utils/jwt");
+const {
+  resetRateLimits,
+  MAX_FAILED_ATTEMPTS,
+} = require("../middlewares/rateLimit");
 const request = require("supertest");
 const app = require("../app");
 
 beforeEach(async () => {
   await resetDb();
+  // Bộ đếm rate limit sống trong bộ nhớ tiến trình, không nằm trong DB nên
+  // resetDb() không dọn. Không reset thì case sau thừa hưởng số lần đếm của
+  // case trước và bắt đầu trả 429.
+  resetRateLimits();
 });
 
 after(async () => {
@@ -137,18 +145,19 @@ test("header không có tiền tố Bearer trả 401", async () => {
 
 // Tiêu chí 5: đây là lý do requireAuth tra lại DB thay vì chỉ verify chữ ký
 test("token còn hợp lệ nhưng user đã bị khoá thì trả 401", async () => {
-  const user = await createUser();
   const auth = await authHeader({ username: "se-bi-khoa", email: "khoa@example.com" });
+  // Tìm theo username bằng findFirst chứ không phải khoá unique: từ migration
+  // 20260819000000, username chỉ unique trong phạm vi bản ghi chưa xoá mềm.
+  const user = await prisma.user.findFirst({ where: { username: "se-bi-khoa" } });
 
   await prisma.user.update({
-    where: { username: "se-bi-khoa" },
+    where: { id: user.id },
     data: { isActive: false },
   });
 
   const res = await request(app).get("/api/auth/me").set(auth);
 
   assert.equal(res.status, 401);
-  assert.ok(user);
 });
 
 // Tiêu chí 6
@@ -187,6 +196,134 @@ test("GET products và categories không cần token", async () => {
 
   assert.equal(products.status, 200);
   assert.equal(categories.status, 200);
+});
+
+// --- Rate limit đăng nhập ---
+
+test("thử sai quá số lần cho phép thì trả 429", async () => {
+  const user = await createUser({ password: "matkhau123" });
+
+  for (let i = 0; i < MAX_FAILED_ATTEMPTS; i += 1) {
+    const res = await login({ username: user.username, password: "sai" });
+    assert.equal(res.status, 401, `lần thử thứ ${i + 1} phải là 401`);
+  }
+
+  const res = await login({ username: user.username, password: "sai" });
+  assert.equal(res.status, 429);
+  assert.match(res.body.error, /quá nhiều lần/);
+});
+
+test("bị 429 rồi thì mật khẩu ĐÚNG cũng không vào được", async () => {
+  const user = await createUser({ password: "matkhau123" });
+
+  for (let i = 0; i < MAX_FAILED_ATTEMPTS; i += 1) {
+    await login({ username: user.username, password: "sai" });
+  }
+
+  const res = await login({ username: user.username, password: "matkhau123" });
+  assert.equal(res.status, 429);
+});
+
+// Nếu đếm cả lần thành công thì người dùng thật đăng nhập lại nhiều lần trong
+// ngày cũng bị khoá, mà việc đó hoàn toàn vô hại.
+test("đăng nhập đúng nhiều lần không bị tính vào hạn mức", async () => {
+  const user = await createUser({ password: "matkhau123" });
+
+  for (let i = 0; i < MAX_FAILED_ATTEMPTS + 5; i += 1) {
+    const res = await login({ username: user.username, password: "matkhau123" });
+    assert.equal(res.status, 200, `lần đăng nhập thứ ${i + 1} phải thành công`);
+  }
+});
+
+test("rate limit không đụng tới các route khác", async () => {
+  const user = await createUser({ password: "matkhau123" });
+
+  for (let i = 0; i < MAX_FAILED_ATTEMPTS + 1; i += 1) {
+    await login({ username: user.username, password: "sai" });
+  }
+
+  const res = await request(app).get("/api/products");
+  assert.equal(res.status, 200);
+});
+
+// --- Đổi mật khẩu ---
+
+const changePassword = (auth, body) =>
+  request(app).put("/api/auth/password").set(auth).send(body);
+
+test("PUT /api/auth/password không token trả 401", async () => {
+  const res = await request(app)
+    .put("/api/auth/password")
+    .send({ currentPassword: "matkhau123", newPassword: "matkhaumoi999" });
+
+  assert.equal(res.status, 401);
+});
+
+test("đổi mật khẩu thành công thì mật khẩu cũ hết tác dụng", async () => {
+  const auth = await authHeader({ password: "matkhau123" });
+  const user = await prisma.user.findFirst({ orderBy: { id: "desc" } });
+
+  const res = await changePassword(auth, {
+    currentPassword: "matkhau123",
+    newPassword: "matkhaumoi999",
+  });
+  assert.equal(res.status, 200);
+
+  const cu = await login({ username: user.username, password: "matkhau123" });
+  const moi = await login({ username: user.username, password: "matkhaumoi999" });
+
+  assert.equal(cu.status, 401);
+  assert.equal(moi.status, 200);
+});
+
+// 400 chứ không 401: người dùng đang đăng nhập hợp lệ, chỉ gõ sai mật khẩu cũ.
+// 401 sẽ khiến interceptor phía FE đá họ ra trang đăng nhập.
+test("sai mật khẩu hiện tại trả 400 và không đổi gì", async () => {
+  const auth = await authHeader({ password: "matkhau123" });
+  const user = await prisma.user.findFirst({ orderBy: { id: "desc" } });
+
+  const res = await changePassword(auth, {
+    currentPassword: "sai-hoan-toan",
+    newPassword: "matkhaumoi999",
+  });
+
+  assert.equal(res.status, 400);
+  assert.equal(res.body.error, "Mật khẩu hiện tại không đúng");
+
+  const van_vao_duoc = await login({
+    username: user.username,
+    password: "matkhau123",
+  });
+  assert.equal(van_vao_duoc.status, 200);
+});
+
+test("mật khẩu mới quá ngắn hoặc trùng mật khẩu cũ đều trả 400", async () => {
+  const auth = await authHeader({ password: "matkhau123" });
+
+  const ngan = await changePassword(auth, {
+    currentPassword: "matkhau123",
+    newPassword: "1234567",
+  });
+  const trung = await changePassword(auth, {
+    currentPassword: "matkhau123",
+    newPassword: "matkhau123",
+  });
+
+  assert.equal(ngan.status, 400);
+  assert.match(ngan.body.error, /8 ký tự/);
+  assert.equal(trung.status, 400);
+  assert.match(trung.body.error, /khác mật khẩu hiện tại/);
+});
+
+test("response đổi mật khẩu không chứa hash", async () => {
+  const auth = await authHeader({ password: "matkhau123" });
+
+  const res = await changePassword(auth, {
+    currentPassword: "matkhau123",
+    newPassword: "matkhaumoi999",
+  });
+
+  assert.ok(!JSON.stringify(res.body).includes("$2"));
 });
 
 // Tiêu chí 8. Phải chạy ở tiến trình con vì cần nạp module với env đã bỏ

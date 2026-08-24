@@ -23,7 +23,11 @@ Trong phạm vi:
 
 Ngoài phạm vi (ghi ra để khỏi hiểu nhầm là bỏ sót):
 
-- Đổi mật khẩu, quên mật khẩu, refresh token
+- Quên mật khẩu, refresh token
+- Thu hồi token đang lưu hành. JWT là stateless nên đổi mật khẩu **không** làm
+  token cũ hết hiệu lực — nó vẫn dùng được tới khi hết hạn (1 ngày). Muốn thu
+  hồi được thì phải thêm cột `tokenVersion` vào `User` và cho `requireAuth`
+  đối chiếu
 
 Đã được làm ở module sau, ghi lại để khỏi tìm nhầm chỗ:
 
@@ -148,6 +152,38 @@ Cần `Authorization: Bearer <token>`.
 
 Không có `POST /api/auth/logout`: token là stateless, đăng xuất chỉ là việc FE
 xoá token khỏi localStorage.
+
+### PUT /api/auth/password
+
+Cần `Authorization: Bearer <token>`. Người dùng tự đổi mật khẩu của chính mình.
+
+Body: `{ "currentPassword": string, "newPassword": string }`
+
+- `200` → `{ msg: "Đổi mật khẩu thành công" }`
+- `400` → thiếu trường, `newPassword` ngắn hơn 8 ký tự, `newPassword` trùng
+  mật khẩu cũ, hoặc **`currentPassword` sai**
+- `401` → không có token
+
+`currentPassword` sai trả `400` chứ không phải `401`, dù nghe có vẻ hợp lý hơn:
+người dùng đang đăng nhập hoàn toàn hợp lệ, chỉ gõ sai mật khẩu cũ. Trả `401`
+sẽ khiến interceptor phía FE xoá token và đá họ ra trang đăng nhập.
+
+### Giới hạn số lần đăng nhập sai
+
+`POST /api/auth/login` bị chặn ở **10 lần sai trong 15 phút, tính theo IP**,
+vượt quá thì trả `429`.
+
+Chỉ đếm lần **hỏng** (`skipSuccessfulRequests`). Đếm cả lần thành công thì một
+người dùng thật đăng nhập lại nhiều lần trong ngày cũng bị khoá, mà việc đó vô
+hại.
+
+Đã bị `429` rồi thì mật khẩu đúng cũng không vào được cho tới hết cửa sổ 15 phút
+— đó là điểm mấu chốt, nếu không thì kẻ dò chỉ cần đoán trúng là thoát.
+
+Bộ đếm nằm trong bộ nhớ tiến trình. Chạy nhiều instance thì mỗi instance đếm
+riêng, và khởi động lại là mất sạch. Muốn chắc thì phải chuyển sang Redis.
+
+Chặn theo IP không cản được tấn công phân tán từ nhiều IP.
 
 ## Quy tắc kiểm tra đầu vào
 

@@ -81,12 +81,27 @@ test("PUT /api/categories/:id trả 404 với danh mục đã xóa mềm", async
   assert.equal(res.status, 404);
 });
 
-// I-3: slug là unique nhưng danh mục xóa mềm vẫn giữ slug cũ mãi mãi, tạo mới trùng
-// slug phải trả 400 rõ ràng thay vì P2002 rơi xuống lỗi chung chung.
-test("POST /api/categories trả 400 khi slug trùng với danh mục đã xóa mềm", async () => {
+// I-3 (đã đổi): trước đây slug của danh mục xoá mềm bị giữ chỗ vĩnh viễn nên ca
+// này trả 400. Từ migration 20260819000000 dùng unique một phần, slug được giải
+// phóng khi xoá mềm nên phải tạo lại được.
+test("tạo lại được slug của danh mục đã xóa mềm", async () => {
   const category = await createCategory({ slug: "ao" });
   await request(app).delete(`/api/categories/${category.id}`)
     .set(auth);
+
+  const res = await request(app)
+    .post("/api/categories")
+    .set(auth)
+    .send({ name: "Áo mới", slug: "ao", isActive: true });
+
+  assert.equal(res.status, 200);
+
+  const cu = await prisma.category.findUnique({ where: { id: category.id } });
+  assert.equal(cu.isDeleted, true, "bản ghi cũ vẫn còn, không bị hồi sinh");
+});
+
+test("slug trùng với danh mục đang hoạt động vẫn trả 400", async () => {
+  await createCategory({ slug: "ao" });
 
   const res = await request(app)
     .post("/api/categories")

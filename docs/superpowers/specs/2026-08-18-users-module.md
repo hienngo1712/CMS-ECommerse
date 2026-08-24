@@ -59,12 +59,24 @@ dùng cách query hết rồi `delete user.password`.
 
 `isDeleted = true`, không xoá bản ghi, vì `Order.userId` trỏ vào `User`.
 
-Hệ quả phải chấp nhận: `username` và `email` là `@unique` ở cấp DB, nên người
-đã xoá vẫn giữ chỗ hai giá trị đó mãi mãi. Tạo lại đúng username cũ sẽ đụng
-`P2002` — bắt lỗi này và trả `400` với câu nói rõ, chứ không để rơi xuống `500`.
+**Cập nhật 2026-08-19 — đã chữa.** Lúc viết spec này `username` và `email` là
+`@unique` trên toàn bảng, nên người đã xoá giữ chỗ hai giá trị đó mãi mãi.
 
-Đây đúng là vấn đề đã gặp với `Category.slug`. Cách chữa thật sự là unique một
-phần theo `isDeleted`, nhưng đó là đổi schema, để dành khi nào cần.
+Migration `20260819000000_partial_unique_soft_delete` thay ba ràng buộc
+(`Category.slug`, `User.username`, `User.email`) bằng **unique một phần** chỉ
+áp dụng cho `isDeleted = false`. Xoá mềm giờ giải phóng giá trị.
+
+Trùng với một bản ghi **đang hoạt động** vẫn đụng `P2002` và vẫn trả `400` với
+câu nói rõ cột nào, chứ không rơi xuống `500`.
+
+Đánh đổi: Prisma không diễn tả được unique một phần, nên ba index đó không có
+mặt trong `schema.prisma` và `prisma migrate dev` sẽ coi chúng là drift rồi sinh
+migration xoá đi. Chỉ dùng `prisma migrate deploy`, hoặc đọc kỹ migration mà
+`migrate dev` sinh ra trước khi áp dụng.
+
+Kéo theo: `username` không còn là khoá unique nên `findUnique`/`upsert`/`update`
+theo `username` không dùng được nữa — `seed-admin.js` đã đổi sang
+`findFirst` rồi `create`/`update` theo `id`.
 
 ### QĐ-6: Kế thừa envelope lỗi
 
@@ -127,8 +139,11 @@ Body: `{ username, email, role, isActive, password? }`
 6. `PUT` có `password` mới thì mật khẩu cũ hết tác dụng, mật khẩu mới dùng được
 7. Tự khoá mình (`isActive: false`) → `400`; tự hạ role khỏi `admin` → `400`
 8. Tự xoá mình → `400`
-9. Tạo trùng `username` hoặc `email` → `400` với câu rõ ràng, không phải `500`
-10. Trùng với username của người **đã xoá mềm** cũng → `400`, không phải `500`
+9. Tạo trùng `username` hoặc `email` của người **đang hoạt động** → `400` với
+   câu rõ ràng, không phải `500`
+10. Tạo lại username của người **đã xoá mềm** → `201`, và bản ghi cũ vẫn nằm
+    nguyên đó với `isDeleted = true` (không hồi sinh bản cũ).
+    Tiêu chí này ngược lại với bản đầu, xem QĐ-5
 11. `DELETE` là xoá mềm: bản ghi còn, `isDeleted = true`, và không còn trong `GET`
 12. Người đã xoá mềm không đăng nhập được nữa
 13. Trên trình duyệt: tạo, sửa, khoá, xoá người dùng chạy thông

@@ -1,14 +1,16 @@
 import { Avatar, Dropdown, Layout } from "antd";
 import {
   BulbOutlined,
+  KeyOutlined,
   LogoutOutlined,
   MoonOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { AuthContext } from "../contexts/AuthContext";
+import ChangePasswordModal from "./ChangePasswordModal";
 
 const { Header } = Layout;
 
@@ -16,6 +18,7 @@ const AppHeader = () => {
   const { isDark, toggleTheme } = useContext(ThemeContext);
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [isPasswordOpen, setIsPasswordOpen] = useState(false);
 
   const menuItems = [
     {
@@ -25,6 +28,11 @@ const AppHeader = () => {
     {
       key: "settings",
       label: "Settings",
+    },
+    {
+      key: "change-password",
+      icon: <KeyOutlined />,
+      label: "Đổi mật khẩu",
     },
     {
       type: "divider" as const,
@@ -38,6 +46,10 @@ const AppHeader = () => {
   ];
 
   const handleMenuClick = ({ key }: { key: string }) => {
+    if (key === "change-password") {
+      setIsPasswordOpen(true);
+      return;
+    }
     if (key === "logout") {
       logout();
       navigate("/login", { replace: true });
@@ -66,6 +78,11 @@ const AppHeader = () => {
           />
         </Dropdown>
       </div>
+
+      <ChangePasswordModal
+        open={isPasswordOpen}
+        onClose={() => setIsPasswordOpen(false)}
+      />
     </Header>
   );
 };

@@ -3,6 +3,7 @@ const assert = require("node:assert/strict");
 
 const { prisma, resetDb } = require("./helpers/db");
 const { createUser, authHeader } = require("./helpers/auth");
+const { resetRateLimits } = require("../middlewares/rateLimit");
 const request = require("supertest");
 const app = require("../app");
 
@@ -11,6 +12,9 @@ let adminId;
 
 beforeEach(async () => {
   await resetDb();
+  // File này có vài case đăng nhập thật để kiểm tra mật khẩu, nên cũng phải dọn
+  // bộ đếm rate limit giữa các case.
+  resetRateLimits();
   const admin = await createUser({ username: "septo", email: "sep@example.com" });
   adminId = admin.id;
   auth = { Authorization: (await authHeader({ username: "septo2", email: "sep2@example.com" })).Authorization };
@@ -75,7 +79,7 @@ test("POST tạo user, không trả password, và mật khẩu được băm", a
   assert.equal(res.body.password, undefined);
   assert.ok(!JSON.stringify(res.body).includes("$2"), "không được lộ hash");
 
-  const row = await prisma.user.findUnique({ where: { username: "nhanvien1" } });
+  const row = await prisma.user.findFirst({ where: { username: "nhanvien1" } });
   assert.notEqual(row.password, "matkhau123");
   assert.match(row.password, /^\$2[aby]\$/);
 });
@@ -238,10 +242,25 @@ test("trùng username và trùng email đều trả 400 với câu chỉ đúng 
   assert.equal(trungEmail.body.error, "Email đã tồn tại");
 });
 
-// Tiêu chí 10: đây là chỗ dễ rơi xuống 500 nhất
-test("trùng username của người đã xoá mềm trả 400 chứ không phải 500", async () => {
+// Tiêu chí 10 (đã đổi): trước đây username của người xoá mềm bị giữ chỗ vĩnh
+// viễn và ca này trả 400. Từ migration 20260819000000 dùng unique một phần,
+// chỗ đó được giải phóng nên phải tạo lại được.
+test("tạo lại được username của người đã xoá mềm", async () => {
   const tao = await request(app).post("/api/users").set(auth).send(payload());
   await request(app).delete(`/api/users/${tao.body.id}`).set(auth);
+
+  const res = await request(app).post("/api/users").set(auth).send(payload());
+
+  assert.equal(res.status, 201);
+  assert.notEqual(res.body.id, tao.body.id, "phải là bản ghi mới, không phải hồi sinh bản cũ");
+
+  // Bản ghi cũ vẫn nằm nguyên đó để Order.userId không bị hỏng.
+  const cu = await prisma.user.findUnique({ where: { id: tao.body.id } });
+  assert.equal(cu.isDeleted, true);
+});
+
+test("người đã xoá mềm vẫn chặn được trùng với người đang hoạt động", async () => {
+  await request(app).post("/api/users").set(auth).send(payload());
 
   const res = await request(app).post("/api/users").set(auth).send(payload());
 

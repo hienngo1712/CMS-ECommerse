@@ -29,13 +29,29 @@ async function main() {
 
   const hashed = await bcrypt.hash(password, 10);
 
+  // Không dùng upsert được nữa: username thôi @unique kể từ khi chuyển sang
+  // index một phần, mà upsert đòi where phải là khoá unique.
   // Chạy lại script với cùng username thì đổi mật khẩu chứ không lỗi trùng khoá.
-  const user = await prisma.user.upsert({
-    where: { username },
-    update: { password: hashed, email, role: "admin", isActive: true, isDeleted: false },
-    create: { username, email, password: hashed, role: "admin" },
-    select: { id: true, username: true, email: true, role: true },
-  });
+  const existing = await prisma.user.findFirst({ where: { username } });
+
+  const data = {
+    password: hashed,
+    email,
+    role: "admin",
+    isActive: true,
+    isDeleted: false,
+  };
+
+  const user = existing
+    ? await prisma.user.update({
+        where: { id: existing.id },
+        data,
+        select: { id: true, username: true, email: true, role: true },
+      })
+    : await prisma.user.create({
+        data: { username, ...data },
+        select: { id: true, username: true, email: true, role: true },
+      });
 
   console.log("Đã tạo/cập nhật tài khoản:", user);
 }

@@ -14,10 +14,14 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// username và email KHÔNG có @unique ở đây là cố ý. Ràng buộc unique nằm ở
+// index một phần `User_username_active_key` / `User_email_active_key`, chỉ áp
+// dụng cho bản ghi isDeleted = false — Prisma không diễn tả được điều đó.
+// Xem migration 20260819000000_partial_unique_soft_delete.
 model User {
   id        Int     @id @default(autoincrement())
-  username  String  @unique
-  email     String  @unique
+  username  String
+  email     String
   password  String
   role      String  @default("staff")
   isActive  Boolean @default(true)
@@ -25,10 +29,12 @@ model User {
   orders    Order[]
 }
 
+// slug không có @unique vì lý do y hệt User ở trên: ràng buộc nằm ở index một
+// phần `Category_slug_active_key`.
 model Category {
   id        Int      @id @default(autoincrement())
   name      String
-  slug      String   @unique
+  slug      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   isActive  Boolean  @default(true)
