@@ -1,8 +1,9 @@
 import { Button, Table, Tag } from "antd";
 
 import type { Order } from "./Types";
-import { STATUS_COLOR, STATUS_LABEL } from "./Types";
+import { STATUS_COLOR, STATUS_KEY } from "./Types";
 import { formatDateTime, formatMoney, getCustomerName, getTotalQuantity } from "./orderUtils";
+import { useT } from "../../i18n";
 
 type Props = {
   orders: Order[];
@@ -23,53 +24,55 @@ const OrdersTable = ({
   onPageChange,
   onView,
 }: Props) => {
+  const { t } = useT();
+
   const columns = [
     {
-      title: "Mã đơn",
+      title: t("orderId"),
       key: "id",
       width: 90,
       render: (_: unknown, record: Order) => <b>#{record.id}</b>,
     },
     {
-      title: "Khách hàng",
+      title: t("customer"),
       key: "customer",
-      render: (_: unknown, record: Order) => getCustomerName(record),
+      render: (_: unknown, record: Order) => getCustomerName(record) ?? t("guest"),
     },
     {
-      title: "Điện thoại",
+      title: t("phone"),
       key: "phone",
       render: (_: unknown, record: Order) => record.address?.phone ?? "-",
     },
     {
-      title: "Số lượng",
+      title: t("quantity"),
       key: "quantity",
       width: 100,
       render: (_: unknown, record: Order) => getTotalQuantity(record),
     },
     {
-      title: "Tổng tiền",
+      title: t("total"),
       key: "total",
       render: (_: unknown, record: Order) => formatMoney(record.totalAmount),
     },
     {
-      title: "Trạng thái",
+      title: t("status"),
       key: "status",
       render: (_: unknown, record: Order) => (
-        <Tag color={STATUS_COLOR[record.status]}>{STATUS_LABEL[record.status]}</Tag>
+        <Tag color={STATUS_COLOR[record.status]}>{t(STATUS_KEY[record.status])}</Tag>
       ),
     },
     {
-      title: "Ngày đặt",
+      title: t("orderDate"),
       key: "createdAt",
       render: (_: unknown, record: Order) => formatDateTime(record.createdAt),
     },
     {
-      title: "Hành động",
+      title: t("action"),
       key: "actions",
       width: 110,
       render: (_: unknown, record: Order) => (
         <Button type="link" onClick={() => onView(record.id)}>
-          Xem
+          {t("view")}
         </Button>
       ),
     },

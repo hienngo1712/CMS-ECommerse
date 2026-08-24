@@ -4,6 +4,7 @@ import axios from "axios";
 
 import AppModal from "./common/AppModal";
 import authService from "../services/AuthService";
+import { useT } from "../i18n";
 
 type Props = {
   open: boolean;
@@ -19,6 +20,7 @@ type FormValues = {
 const ChangePasswordModal = ({ open, onClose }: Props) => {
   const [form] = Form.useForm<FormValues>();
   const { message } = App.useApp();
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
 
   // Không để mật khẩu vừa gõ nằm lại trong form sau khi đóng modal.
@@ -37,7 +39,7 @@ const ChangePasswordModal = ({ open, onClose }: Props) => {
     try {
       setSubmitting(true);
       await authService.changePassword(values.currentPassword, values.newPassword);
-      message.success("Đổi mật khẩu thành công");
+      message.success(t("changePasswordSuccess"));
       onClose();
     } catch (error) {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
@@ -49,7 +51,7 @@ const ChangePasswordModal = ({ open, onClose }: Props) => {
         message.error(String(serverError));
       } else {
         console.error(error);
-        message.error("Đổi mật khẩu thất bại");
+        message.error(t("changePasswordFailed"));
       }
     } finally {
       setSubmitting(false);
@@ -58,51 +60,53 @@ const ChangePasswordModal = ({ open, onClose }: Props) => {
 
   return (
     <AppModal
-      title="Đổi mật khẩu"
+      title={t("changePassword")}
       open={open}
       onCancel={onClose}
       onOk={handleOk}
-      okText="Đổi mật khẩu"
-      cancelText="Hủy"
+      okText={t("changePassword")}
+      cancelText={t("cancel")}
       confirmLoading={submitting}
     >
       <Form layout="vertical" form={form}>
         <Form.Item
-          label="Mật khẩu hiện tại"
+          label={t("currentPassword")}
           name="currentPassword"
-          rules={[{ required: true, message: "Vui lòng nhập mật khẩu hiện tại" }]}
-        >
-          <Input.Password placeholder="Mật khẩu đang dùng" />
-        </Form.Item>
-
-        <Form.Item
-          label="Mật khẩu mới"
-          name="newPassword"
           rules={[
-            { required: true, message: "Vui lòng nhập mật khẩu mới" },
-            { min: 8, message: "Mật khẩu phải từ 8 ký tự trở lên" },
+            { required: true, message: t("required", { name: t("currentPassword") }) },
           ]}
         >
-          <Input.Password placeholder="Tối thiểu 8 ký tự" />
+          <Input.Password placeholder={t("currentPasswordPlaceholder")} />
         </Form.Item>
 
         <Form.Item
-          label="Nhập lại mật khẩu mới"
+          label={t("newPassword")}
+          name="newPassword"
+          rules={[
+            { required: true, message: t("required", { name: t("newPassword") }) },
+            { min: 8, message: t("passwordMin") },
+          ]}
+        >
+          <Input.Password placeholder={t("passwordMinPlaceholder")} />
+        </Form.Item>
+
+        <Form.Item
+          label={t("confirmPassword")}
           name="confirmPassword"
           // dependencies để antd validate lại ô này mỗi khi ô newPassword đổi,
           // nếu không thì sửa mật khẩu mới xong ô xác nhận vẫn báo khớp.
           dependencies={["newPassword"]}
           rules={[
-            { required: true, message: "Vui lòng nhập lại mật khẩu mới" },
+            { required: true, message: t("required", { name: t("confirmPassword") }) },
             ({ getFieldValue }) => ({
               validator: (_, value: string) =>
                 !value || value === getFieldValue("newPassword")
                   ? Promise.resolve()
-                  : Promise.reject(new Error("Hai mật khẩu không khớp")),
+                  : Promise.reject(new Error(t("passwordMismatch"))),
             }),
           ]}
         >
-          <Input.Password placeholder="Nhập lại để xác nhận" />
+          <Input.Password placeholder={t("confirmPasswordPlaceholder")} />
         </Form.Item>
       </Form>
     </AppModal>

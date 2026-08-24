@@ -1,3 +1,5 @@
+import type { TKey } from "../../i18n";
+
 export const ORDER_STATUSES = [
   "PENDING",
   "CONFIRMED",
@@ -8,14 +10,15 @@ export const ORDER_STATUSES = [
 
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-// Nhãn và màu dùng chung cho cả bảng lẫn màn chi tiết, để một trạng thái luôn
-// hiện cùng một kiểu ở mọi nơi.
-export const STATUS_LABEL: Record<OrderStatus, string> = {
-  PENDING: "Chờ xác nhận",
-  CONFIRMED: "Đã xác nhận",
-  SHIPPING: "Đang giao",
-  DELIVERED: "Đã giao",
-  CANCELED: "Đã huỷ",
+// Khoá dịch, không phải chữ hiển thị: nơi dùng gọi t(STATUS_KEY[status]).
+// Dùng chung cho cả bảng lẫn màn chi tiết, để một trạng thái luôn hiện cùng
+// một kiểu ở mọi nơi.
+export const STATUS_KEY: Record<OrderStatus, TKey> = {
+  PENDING: "statusPending",
+  CONFIRMED: "statusConfirmed",
+  SHIPPING: "statusShipping",
+  DELIVERED: "statusDelivered",
+  CANCELED: "statusCanceled",
 };
 
 export const STATUS_COLOR: Record<OrderStatus, string> = {

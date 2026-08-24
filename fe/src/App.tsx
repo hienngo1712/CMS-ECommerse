@@ -9,28 +9,31 @@ import OrdersPage from "./pages/Orders";
 import UsersPage from "./pages/Users";
 import Login from "./pages/Login/Login";
 import RequireAuth from "./components/RequireAuth";
+import { I18nProvider } from "./i18n";
 
 function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<RequireAuth />}>
-              <Route path="/" element={<AppLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="dashboard" element={<Dashboard />} />
-                <Route path="category" element={<CategoriesPage />} />
-                <Route path="products" element={<Products />} />
-                <Route path="orders" element={<OrdersPage />} />
-                <Route path="users" element={<UsersPage />} />
+    <I18nProvider>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route element={<RequireAuth />}>
+                <Route path="/" element={<AppLayout />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="category" element={<CategoriesPage />} />
+                  <Route path="products" element={<Products />} />
+                  <Route path="orders" element={<OrdersPage />} />
+                  <Route path="users" element={<UsersPage />} />
+                </Route>
               </Route>
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </I18nProvider>
   );
 }
 

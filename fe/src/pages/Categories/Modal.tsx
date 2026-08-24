@@ -4,6 +4,8 @@ import { App, Form, Input, Switch } from "antd";
 import { useEffect } from "react";
 import axios from "axios";
 
+import { useT } from "../../i18n";
+
 type Props = {
   open: boolean;
   onClose: () => void;
@@ -14,6 +16,7 @@ type Props = {
 const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
   const [form] = Form.useForm();
   const { message } = App.useApp();
+  const { t } = useT();
 
   const handleOk = async () => {
     let values;
@@ -43,7 +46,7 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
         message.error(String(serverError));
       } else {
         console.error(error);
-        message.error("Lưu danh mục thất bại");
+        message.error(t("saveFailed"));
       }
     }
   };
@@ -64,35 +67,35 @@ const ModalCategories = ({ open, onClose, onSuccess, categoryId }: Props) => {
 
   return (
     <AppModal
-      title={categoryId ? "Chỉnh sửa danh mục" : "Tạo danh mục mới"}
+      title={categoryId ? t("editCategory") : t("createCategory")}
       open={open}
       onCancel={onClose}
       onOk={handleOk}
-      okText={categoryId ? "Chỉnh sửa" : "Tạo"}
-      cancelText={"Hủy"}
+      okText={categoryId ? t("edit") : t("create")}
+      cancelText={t("cancel")}
     >
       <Form layout="vertical" form={form}>
         <Form.Item
-          label="Tên danh mục"
+          label={t("categoryName")}
           name={"name"}
-          rules={[{ required: true, message: "Vui lòng nhập tên danh mục" }]}
+          rules={[{ required: true, message: t("required", { name: t("categoryName") }) }]}
         >
-          <Input placeholder="Nhập tên danh mục" />
+          <Input placeholder={t("enterName")} />
         </Form.Item>
 
         <Form.Item
-          label="Slug"
+          label={t("slug")}
           name={"slug"}
-          rules={[{ required: true, message: "Vui lòng nhập Slug" }]}
+          rules={[{ required: true, message: t("required", { name: t("slug") }) }]}
         >
-          <Input placeholder="Ví dụ: thời trang" />
+          <Input placeholder={t("exampleSlug")} />
         </Form.Item>
 
         <Form.Item
-          label="Trạng thái"
+          label={t("status")}
           name={"isActive"}
           valuePropName="checked"
-          rules={[{ required: true, message: "Vui lòng nhập Slug" }]}
+          rules={[{ required: true, message: t("required", { name: t("status") }) }]}
         >
           <Switch />
         </Form.Item>

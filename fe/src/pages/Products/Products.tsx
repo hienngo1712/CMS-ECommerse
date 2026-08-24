@@ -13,10 +13,12 @@ import type { PaginationMeta, Product, ProductQuery } from "./Type";
 import { ThemeContext } from "../../contexts/ThemeContext";
 import ProductsTable from "./ProductsTable";
 import ModalProducts from "./Modal";
+import { useT } from "../../i18n";
 
 const Products = () => {
   const { isDark } = useContext(ThemeContext);
   const { message } = App.useApp();
+  const { t } = useT();
   const [categories, setCategories] = useState<CategoriesResponse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
@@ -56,7 +58,7 @@ const Products = () => {
       setMeta(res.meta);
     } catch (error) {
       console.error(error);
-      message.error("Không tải được danh sách sản phẩm");
+      message.error(t("loadFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -88,11 +90,11 @@ const Products = () => {
   const handleDelete = async (id: number) => {
     try {
       await productService.deleteProduct(id);
-      message.success("Xóa sản phẩm thành công");
+      message.success(t("deleteSuccess"));
       fetchProducts();
     } catch (error) {
       console.error(error);
-      message.error("Xóa sản phẩm thất bại");
+      message.error(t("deleteFailed"));
     }
   };
 
@@ -100,18 +102,18 @@ const Products = () => {
     {
       type: "input",
       name: "search",
-      placeholder: "Tìm kiếm sản phẩm",
-      label: "Tìm kiếm",
+      placeholder: t("searchPlaceholder"),
+      label: t("search"),
     },
     {
       type: "select",
       name: "categoryId",
-      placeholder: "Chọn danh mục",
+      placeholder: t("selectCategory"),
       options: [
-        { label: "Tất cả", value: "" },
+        { label: t("all"), value: "" },
         ...categories.map((c) => ({ label: c.name, value: c.id })),
       ],
-      label: "Danh mục",
+      label: t("category"),
     },
   ];
 
@@ -140,7 +142,7 @@ const Products = () => {
       <div className="flex items-end justify-between mb-10">
         <AppFilters filters={productsFilter} onChange={handleFilterChange} />
         <Button type="primary" onClick={handleCreate}>
-          + Tạo sản phẩm mới
+          + {t("createProduct")}
         </Button>
       </div>
 

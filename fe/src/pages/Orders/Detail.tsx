@@ -4,8 +4,9 @@ import axios from "axios";
 
 import orderService from "../../services/OrderService";
 import type { Order, OrderItem, OrderStatus } from "./Types";
-import { STATUS_COLOR, STATUS_FLOW, STATUS_LABEL } from "./Types";
+import { STATUS_COLOR, STATUS_FLOW, STATUS_KEY } from "./Types";
 import { formatDateTime, formatMoney } from "./orderUtils";
+import { useT } from "../../i18n";
 
 type Props = {
   open: boolean;
@@ -16,6 +17,7 @@ type Props = {
 
 const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
   const { message } = App.useApp();
+  const { t } = useT();
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(false);
   const [nextStatus, setNextStatus] = useState<OrderStatus | undefined>(undefined);
@@ -40,7 +42,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
       .catch((error) => {
         if (ignore) return;
         console.error(error);
-        message.error("Không tải được chi tiết đơn");
+        message.error(t("loadFailed"));
       })
       .finally(() => {
         if (ignore) return;
@@ -50,7 +52,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
     return () => {
       ignore = true;
     };
-  }, [open, orderId, message]);
+  }, [open, orderId, message, t]);
 
   const handleSaveStatus = async () => {
     if (!order || !nextStatus) return;
@@ -60,7 +62,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
       const updated = await orderService.updateStatus(order.id, nextStatus);
       setOrder(updated);
       setNextStatus(undefined);
-      message.success("Đã đổi trạng thái đơn");
+      message.success(t("statusChanged"));
       onUpdated();
     } catch (error) {
       const status = axios.isAxiosError(error) ? error.response?.status : undefined;
@@ -72,7 +74,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
         message.error(String(serverError));
       } else {
         console.error(error);
-        message.error("Đổi trạng thái thất bại");
+        message.error(t("saveFailed"));
       }
     } finally {
       setSaving(false);
@@ -81,32 +83,32 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
 
   const itemColumns = [
     {
-      title: "Sản phẩm",
+      title: t("product"),
       key: "product",
       render: (_: unknown, item: OrderItem) => item.variant.color.product.name,
     },
     {
-      title: "Màu",
+      title: t("color"),
       key: "color",
       render: (_: unknown, item: OrderItem) => item.variant.color.color,
     },
     {
-      title: "Size",
+      title: t("size"),
       key: "size",
       render: (_: unknown, item: OrderItem) => item.variant.size,
     },
     {
-      title: "SL",
+      title: t("quantityShort"),
       key: "quantity",
       render: (_: unknown, item: OrderItem) => item.quantity,
     },
     {
-      title: "Đơn giá",
+      title: t("unitPrice"),
       key: "price",
       render: (_: unknown, item: OrderItem) => formatMoney(item.price),
     },
     {
-      title: "Thành tiền",
+      title: t("subtotal"),
       key: "subtotal",
       render: (_: unknown, item: OrderItem) => formatMoney(item.price * item.quantity),
     },
@@ -117,7 +119,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
 
   return (
     <Drawer
-      title={order ? `Đơn hàng #${order.id}` : "Chi tiết đơn hàng"}
+      title={order ? t("orderNumber", { id: order.id }) : t("orderDetail")}
       open={open}
       onClose={onClose}
       width={780}
@@ -131,25 +133,25 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
       {!loading && order && (
         <>
           <Descriptions bordered column={2} size="small" className="mb-6">
-            <Descriptions.Item label="Trạng thái">
-              <Tag color={STATUS_COLOR[order.status]}>{STATUS_LABEL[order.status]}</Tag>
+            <Descriptions.Item label={t("status")}>
+              <Tag color={STATUS_COLOR[order.status]}>{t(STATUS_KEY[order.status])}</Tag>
             </Descriptions.Item>
-            <Descriptions.Item label="Ngày đặt">
+            <Descriptions.Item label={t("orderDate")}>
               {formatDateTime(order.createdAt)}
             </Descriptions.Item>
-            <Descriptions.Item label="Người nhận">
+            <Descriptions.Item label={t("receiver")}>
               {order.address?.fullname ?? "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="Điện thoại">
+            <Descriptions.Item label={t("phone")}>
               {order.address?.phone ?? "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="Địa chỉ" span={2}>
+            <Descriptions.Item label={t("address")} span={2}>
               {order.address
                 ? `${order.address.street}, ${order.address.city}`
                 : "-"}
             </Descriptions.Item>
-            <Descriptions.Item label="Tài khoản đặt" span={2}>
-              {order.user ? `${order.user.username} (${order.user.email})` : "Khách vãng lai"}
+            <Descriptions.Item label={t("orderedBy")} span={2}>
+              {order.user ? `${order.user.username} (${order.user.email})` : t("guest")}
             </Descriptions.Item>
           </Descriptions>
 
@@ -162,7 +164,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
             summary={() => (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5}>
-                  <b>Tổng tiền</b>
+                  <b>{t("total")}</b>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5}>
                   <b>{formatMoney(order.totalAmount)}</b>
@@ -173,18 +175,16 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
 
           <div className="mt-6">
             {allowedNext.length === 0 ? (
-              <span className="text-gray-500">
-                Đơn đã ở trạng thái cuối, không đổi được nữa.
-              </span>
+              <span className="text-gray-500">{t("finalStatus")}</span>
             ) : (
               <Space>
                 <Select
-                  placeholder="Chuyển sang"
+                  placeholder={t("changeStatusTo")}
                   style={{ width: 200 }}
                   value={nextStatus}
                   onChange={setNextStatus}
                   options={allowedNext.map((status) => ({
-                    label: STATUS_LABEL[status],
+                    label: t(STATUS_KEY[status]),
                     value: status,
                   }))}
                 />
@@ -194,7 +194,7 @@ const OrderDetail = ({ open, orderId, onClose, onUpdated }: Props) => {
                   loading={saving}
                   onClick={handleSaveStatus}
                 >
-                  Cập nhật
+                  {t("update")}
                 </Button>
               </Space>
             )}

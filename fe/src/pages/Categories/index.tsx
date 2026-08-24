@@ -10,39 +10,32 @@ import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
 import categoryService from "../../services/CategoryService.ts";
 import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
-
-const categoriesFilter: FilterConfig[] = [
-  {
-    type: "input",
-    name: "search",
-    placeholder: "Nhập chữ vào",
-    label: "Tìm kiếm",
-  },
-  {
-    type: "select",
-    name: "isActive",
-    placeholder: "Lựa chọn",
-    options: [
-      {
-        label: "Tất cả",
-        value: "",
-      },
-      {
-        label: "Hoạt động",
-        value: "true",
-      },
-      {
-        label: "Không hoạt động",
-        value: "false",
-      },
-    ],
-    label: "Trạng thái",
-  },
-];
+import { useT } from "../../i18n";
 
 const CategoriesPage = () => {
   const { isDark } = useContext(ThemeContext);
   const { message } = App.useApp();
+  const { t } = useT();
+
+  const categoriesFilter: FilterConfig[] = [
+    {
+      type: "input",
+      name: "search",
+      placeholder: t("searchPlaceholder"),
+      label: t("search"),
+    },
+    {
+      type: "select",
+      name: "isActive",
+      placeholder: t("selectStatus"),
+      options: [
+        { label: t("all"), value: "" },
+        { label: t("active"), value: "true" },
+        { label: t("inactive"), value: "false" },
+      ],
+      label: t("status"),
+    },
+  ];
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [query, setQuery] = useState<CategoryQuery>({
@@ -111,10 +104,10 @@ const CategoriesPage = () => {
       .deleteCategory(id)
       .then(() => {
         fetchCategories();
-        message.success("Xóa danh mục thành công");
+        message.success(t("deleteSuccess"));
       })
       .catch(() => {
-        message.error("Xóa danh mục thất bại");
+        message.error(t("deleteFailed"));
       });
   };
   useEffect(() => {
@@ -141,7 +134,7 @@ const CategoriesPage = () => {
           onChange={handleGetValueFilter}
         />
         <Button onClick={handleCreateCategory} type={"primary"}>
-          + Tạo danh mục mới{" "}
+          + {t("createCategory")}
         </Button>
       </div>
       <TableCategories

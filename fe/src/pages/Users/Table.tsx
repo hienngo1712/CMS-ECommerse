@@ -2,7 +2,8 @@ import { Table, Tag } from "antd";
 
 import TableActions from "../../components/common/TableAction";
 import type { UserRow } from "./Types";
-import { ROLE_LABEL } from "./Types";
+import { ROLE_KEY } from "./Types";
+import { useT } from "../../i18n";
 
 type Props = {
   users: UserRow[];
@@ -27,43 +28,45 @@ const UsersTable = ({
   onEdit,
   onDelete,
 }: Props) => {
+  const { t } = useT();
+
   const columns = [
     {
-      title: "Username",
+      title: t("username"),
       key: "username",
       render: (_: unknown, record: UserRow) => (
         <>
           <b>{record.username}</b>
           {record.id === currentUserId && (
             <Tag className="ml-2" color="blue">
-              Bạn
+              {t("you")}
             </Tag>
           )}
         </>
       ),
     },
-    { title: "Email", dataIndex: "email", key: "email" },
+    { title: t("email"), dataIndex: "email", key: "email" },
     {
-      title: "Quyền",
+      title: t("role"),
       key: "role",
       render: (_: unknown, record: UserRow) => (
         <Tag color={record.role === "admin" ? "purple" : "default"}>
-          {ROLE_LABEL[record.role]}
+          {t(ROLE_KEY[record.role])}
         </Tag>
       ),
     },
     {
-      title: "Trạng thái",
+      title: t("status"),
       key: "isActive",
       render: (_: unknown, record: UserRow) =>
         record.isActive ? (
-          <Tag color="green">Hoạt động</Tag>
+          <Tag color="green">{t("active")}</Tag>
         ) : (
-          <Tag color="red">Đã khoá</Tag>
+          <Tag color="red">{t("locked")}</Tag>
         ),
     },
     {
-      title: "Hành động",
+      title: t("action"),
       key: "actions",
       width: 120,
       render: (_: unknown, record: UserRow) => (

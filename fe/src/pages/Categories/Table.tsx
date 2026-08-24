@@ -1,6 +1,7 @@
 import type { CategoriesResponse } from "./Types";
 import { Table, Tag } from "antd";
 import TableActions from "../../components/common/TableAction";
+import { useT } from "../../i18n";
 
 type Props = {
   categories: CategoriesResponse[];
@@ -23,31 +24,33 @@ const TableCategories = ({
   onEdit,
   onPageChange,
 }: Props) => {
+  const { t } = useT();
+
   const columns = [
     {
-      title: "Tên danh mục",
+      title: t("categoryName"),
       dataIndex: "name",
       key: "name",
       render: (text: string) => <b>{text}</b>,
     },
     {
-      title: "Slug",
+      title: t("slug"),
       dataIndex: "slug",
       key: "slug",
     },
     {
-      title: "Trạng thái",
+      title: t("status"),
       dataIndex: "isActive",
       key: "isActive",
       render: (active: boolean) =>
         active ? (
-          <Tag color="green">Hoạt động</Tag>
+          <Tag color="green">{t("active")}</Tag>
         ) : (
-          <Tag color="red">Tắt</Tag>
+          <Tag color="red">{t("off")}</Tag>
         ),
     },
     {
-      title: "Hành động",
+      title: t("action"),
       dataIndex: "actions",
       key: "actions",
       render: (_: unknown, record: CategoriesResponse) => (

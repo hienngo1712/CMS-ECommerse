@@ -6,6 +6,8 @@ import axios from "axios";
 
 import { AuthContext } from "../../contexts/AuthContext";
 import type { LoginPayload } from "./Types";
+import LanguageSwitch from "../../components/common/LanguageSwitch";
+import { useT } from "../../i18n";
 
 const { Title, Text } = Typography;
 
@@ -15,6 +17,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { message } = App.useApp();
+  const { t } = useT();
 
   const from = (location.state as { from?: string } | null)?.from || "/dashboard";
 
@@ -40,7 +43,7 @@ const Login = () => {
         message.error(String(serverError));
       } else {
         console.error(error);
-        message.error("Không đăng nhập được, thử lại sau");
+        message.error(t("loginFailed"));
       }
     } finally {
       setSubmitting(false);
@@ -50,36 +53,39 @@ const Login = () => {
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
       <Card className="w-full max-w-sm shadow-lg">
+        <div className="flex justify-end mb-2">
+          <LanguageSwitch />
+        </div>
         <div className="text-center mb-6">
           <Title level={3} className="!mb-1">
-            CMS Ecommerce
+            {t("appName")}
           </Title>
-          <Text type="secondary">Đăng nhập để quản trị</Text>
+          <Text type="secondary">{t("loginSubtitle")}</Text>
         </div>
 
         <Form layout="vertical" onFinish={handleSubmit} disabled={submitting}>
           <Form.Item
-            label="Tài khoản"
+            label={t("username")}
             name="username"
-            rules={[{ required: true, message: "Vui lòng nhập tài khoản" }]}
+            rules={[{ required: true, message: t("required", { name: t("username") }) }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="Username hoặc email"
+              placeholder={t("usernameOrEmail")}
               autoFocus
             />
           </Form.Item>
 
           <Form.Item
-            label="Mật khẩu"
+            label={t("password")}
             name="password"
-            rules={[{ required: true, message: "Vui lòng nhập mật khẩu" }]}
+            rules={[{ required: true, message: t("required", { name: t("password") }) }]}
           >
-            <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
+            <Input.Password prefix={<LockOutlined />} placeholder={t("password")} />
           </Form.Item>
 
           <Button type="primary" htmlType="submit" block loading={submitting}>
-            Đăng nhập
+            {t("login")}
           </Button>
         </Form>
       </Card>

@@ -1,5 +1,7 @@
 import { Popconfirm, Space, Tooltip } from "antd";
 import { DeleteOutlined, EditOutlined, EyeOutlined } from "@ant-design/icons";
+
+import { useT } from "../../i18n";
 type ExtraAction = {
   icon: React.ReactNode;
   tooltip: string;
@@ -23,11 +25,13 @@ const TableActions = ({
   onDelete,
   onView,
 }: Props) => {
+  const { t } = useT();
+
   return (
     <>
       <Space>
         {showView && (
-          <Tooltip title="Xem chi tiết">
+          <Tooltip title={t("viewDetail")}>
             <EyeOutlined
               style={{ color: "#52c41a", cursor: "pointer" }}
               onClick={onView}
@@ -36,7 +40,7 @@ const TableActions = ({
         )}
 
         {showEdit && (
-          <Tooltip title="Chỉnh sửa">
+          <Tooltip title={t("edit")}>
             <EditOutlined
               style={{ color: "#1677ff", cursor: "pointer" }}
               onClick={onEdit}
@@ -46,13 +50,13 @@ const TableActions = ({
 
         {showDelete && (
           <Popconfirm
-            title="Xác nhận xóa"
-            description="Bạn có chắc chắn muốn xóa mục này ?"
-            okText="Xóa"
-            cancelText="Hủy"
+            title={t("confirmDelete")}
+            description={t("confirmDeleteDesc")}
+            okText={t("delete")}
+            cancelText={t("cancel")}
             onConfirm={onDelete}
           >
-            <Tooltip title="Xóa">
+            <Tooltip title={t("delete")}>
               <DeleteOutlined style={{ color: "red", cursor: "pointer" }} />
             </Tooltip>
           </Popconfirm>

@@ -2,6 +2,7 @@ import { Table } from "antd";
 import type { Product } from "./Type";
 import TableActions from "../../components/common/TableAction";
 import { formatPriceRange, getFirstImageUrl, getTotalStock } from "./productUtils";
+import { useT } from "../../i18n";
 
 type Props = {
   products: Product[];
@@ -24,9 +25,11 @@ export default function ProductsTable({
   onEdit,
   onDelete,
 }: Props) {
+  const { t } = useT();
+
   const columns = [
     {
-      title: "Ảnh",
+      title: t("image"),
       key: "image",
       width: 80,
       render: (_: unknown, record: Product) => {
@@ -43,28 +46,28 @@ export default function ProductsTable({
       },
     },
     {
-      title: "Tên sản phẩm",
+      title: t("productName"),
       key: "name",
       dataIndex: "name",
       render: (text: string) => <b>{text}</b>,
     },
     {
-      title: "Danh mục",
+      title: t("category"),
       key: "category",
       render: (_: unknown, record: Product) => record.category?.name ?? "-",
     },
     {
-      title: "Giá",
+      title: t("price"),
       key: "price",
       render: (_: unknown, record: Product) => formatPriceRange(record),
     },
     {
-      title: "Tổng kho",
+      title: t("totalStock"),
       key: "stock",
       render: (_: unknown, record: Product) => getTotalStock(record),
     },
     {
-      title: "Hành động",
+      title: t("action"),
       key: "action",
       render: (_: unknown, record: Product) => (
         <TableActions

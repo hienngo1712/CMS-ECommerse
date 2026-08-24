@@ -1,10 +1,13 @@
+import type { TKey } from "../../i18n";
+
 export const USER_ROLES = ["admin", "staff"] as const;
 
 export type UserRole = (typeof USER_ROLES)[number];
 
-export const ROLE_LABEL: Record<UserRole, string> = {
-  admin: "Quản trị",
-  staff: "Nhân viên",
+// Khoá dịch, không phải chữ hiển thị: nơi dùng gọi t(ROLE_KEY[role]).
+export const ROLE_KEY: Record<UserRole, TKey> = {
+  admin: "roleAdmin",
+  staff: "roleStaff",
 };
 
 export type UserRow = {

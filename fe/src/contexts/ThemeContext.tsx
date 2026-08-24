@@ -1,5 +1,7 @@
 import { App as AntApp, ConfigProvider, theme } from "antd";
 import React, { useEffect, useState } from "react";
+
+import { useT } from "../i18n";
 type ThemeContextType = {
   isDark: boolean;
   toggleTheme: () => void;
@@ -15,6 +17,9 @@ export const ThemeContext = React.createContext<ThemeContextType>({
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  // ConfigProvider là chỗ duy nhất nhận locale của antd, mà nó nằm ở đây;
+  // I18nProvider vì thế phải bọc NGOÀI ThemeProvider (xem App.tsx).
+  const { antdLocale } = useT();
   const [isDark, setIsDark] = useState<boolean>(() => {
     const saved = localStorage.getItem("theme");
     return saved ? JSON.parse(saved) : false;
@@ -37,6 +42,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <ThemeContext.Provider value={{ isDark, toggleTheme }}>
       <ConfigProvider
+        locale={antdLocale}
         theme={{
           algorithm: isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
           token: {

@@ -11,33 +11,35 @@ import { ThemeContext } from "../../contexts/ThemeContext";
 import OrdersTable from "./Table";
 import OrderDetail from "./Detail";
 import type { Order, OrderQuery, PaginationMeta } from "./Types";
-import { ORDER_STATUSES, STATUS_LABEL } from "./Types";
-
-const ordersFilter: FilterConfig[] = [
-  {
-    type: "input",
-    name: "search",
-    placeholder: "Tên hoặc số điện thoại",
-    label: "Tìm kiếm",
-  },
-  {
-    type: "select",
-    name: "status",
-    placeholder: "Chọn trạng thái",
-    options: [
-      { label: "Tất cả", value: "" },
-      ...ORDER_STATUSES.map((status) => ({
-        label: STATUS_LABEL[status],
-        value: status,
-      })),
-    ],
-    label: "Trạng thái",
-  },
-];
+import { ORDER_STATUSES, STATUS_KEY } from "./Types";
+import { useT } from "../../i18n";
 
 const OrdersPage = () => {
   const { isDark } = useContext(ThemeContext);
   const { message } = App.useApp();
+  const { t } = useT();
+
+  const ordersFilter: FilterConfig[] = [
+    {
+      type: "input",
+      name: "search",
+      placeholder: t("searchOrderPlaceholder"),
+      label: t("search"),
+    },
+    {
+      type: "select",
+      name: "status",
+      placeholder: t("selectStatus"),
+      options: [
+        { label: t("all"), value: "" },
+        ...ORDER_STATUSES.map((status) => ({
+          label: t(STATUS_KEY[status]),
+          value: status,
+        })),
+      ],
+      label: t("status"),
+    },
+  ];
   const [orders, setOrders] = useState<Order[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
     total: 0,
@@ -63,7 +65,7 @@ const OrdersPage = () => {
       setMeta(res.meta);
     } catch (error) {
       console.error(error);
-      message.error("Không tải được danh sách đơn hàng");
+      message.error(t("loadFailed"));
     } finally {
       setIsLoading(false);
     }

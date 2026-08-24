@@ -11,6 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import React, { useContext } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { AuthContext } from "../contexts/AuthContext";
+import { useT } from "../i18n";
 const { Sider } = Layout;
 
 const AppSidebar: React.FC = () => {
@@ -18,26 +19,27 @@ const AppSidebar: React.FC = () => {
   const location = useLocation();
   const { isDark } = useContext(ThemeContext);
   const { user } = useContext(AuthContext);
+  const { t } = useT();
   const items = [
     {
       key: "dashboard",
       icon: <DashboardOutlined />,
-      label: "Dashboard",
+      label: t("dashboard"),
     },
     {
       key: "products",
       icon: <ShoppingOutlined />,
-      label: "Products",
+      label: t("product"),
     },
     {
       key: "category",
       icon: <ShoppingCartOutlined />,
-      label: "Category",
+      label: t("category"),
     },
     {
       key: "orders",
       icon: <FileTextOutlined />,
-      label: "Orders",
+      label: t("order"),
     },
     // API trả 403 cho tài khoản không phải admin, nên hiện mục này với họ chỉ
     // là mời bấm vào một trang báo lỗi.
@@ -46,7 +48,7 @@ const AppSidebar: React.FC = () => {
           {
             key: "users",
             icon: <UserOutlined />,
-            label: "Users",
+            label: t("user"),
           },
         ]
       : []),
@@ -58,7 +60,7 @@ const AppSidebar: React.FC = () => {
   return (
     <Sider trigger={null} collapsible>
       <div className="text-xl font-bold text-blue-600 text-center py-5">
-        CMS Ecommerce
+        {t("appName")}
       </div>
       <Menu
         theme={isDark ? "dark" : "light"}

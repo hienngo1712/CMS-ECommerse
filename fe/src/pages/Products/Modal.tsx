@@ -7,6 +7,7 @@ import AppModal from "../../components/common/AppModal";
 import productService from "../../services/ProductService";
 import type { CategoriesResponse } from "../Categories/Types";
 import type { ProductPayload } from "./Type";
+import { useT } from "../../i18n";
 
 type Props = {
   open: boolean;
@@ -21,6 +22,7 @@ const makeEmptyColor = () => ({ color: "", colorCode: "#000000", images: [], var
 const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Props) => {
   const [form] = Form.useForm<ProductPayload>();
   const { message } = App.useApp();
+  const { t } = useT();
   const [submitting, setSubmitting] = useState(false);
   const [loadingProduct, setLoadingProduct] = useState(false);
 
@@ -58,7 +60,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
         .catch((error) => {
           if (ignore) return;
           console.error(error);
-          message.error("Không tải được dữ liệu sản phẩm");
+          message.error(t("loadFailed"));
           onClose();
         })
         .finally(() => {
@@ -78,7 +80,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
     // sau mỗi lần render, đưa vào deps là effect chạy lại liên tục và xoá sạch
     // form ngay giữa lúc người dùng đang nhập.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, productId, form, message]);
+  }, [open, productId, form, message, t]);
 
   const handleOk = async () => {
     let values: ProductPayload;
@@ -92,10 +94,10 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
       setSubmitting(true);
       if (productId) {
         await productService.updateProduct(productId, values);
-        message.success("Cập nhật sản phẩm thành công");
+        message.success(t("updateSuccess"));
       } else {
         await productService.createProduct(values);
-        message.success("Tạo sản phẩm thành công");
+        message.success(t("createSuccess"));
       }
       onClose();
       onSuccess();
@@ -108,12 +110,12 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
           )
           .join("; ");
         // Không đóng modal: người dùng cần sửa lại lựa chọn của mình.
-        message.error(`Không thể xóa màu/size đã có trong đơn hàng: ${text}`);
+        message.error(t("variantInUse", { detail: text }));
       } else if (axios.isAxiosError(error) && error.response?.status === 400) {
-        message.error((error.response.data?.details ?? []).join(" · ") || "Dữ liệu không hợp lệ");
+        message.error((error.response.data?.details ?? []).join(" · ") || t("invalidData"));
       } else {
         console.error(error);
-        message.error("Lưu sản phẩm thất bại");
+        message.error(t("saveFailed"));
       }
     } finally {
       setSubmitting(false);
@@ -122,41 +124,41 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
 
   return (
     <AppModal
-      title={productId ? "Chỉnh sửa sản phẩm" : "Tạo sản phẩm mới"}
+      title={productId ? t("editProduct") : t("createProduct")}
       open={open}
       onCancel={onClose}
       onOk={handleOk}
       confirmLoading={submitting}
       okButtonProps={{ disabled: loadingProduct }}
-      okText={productId ? "Lưu" : "Tạo"}
-      cancelText="Hủy"
+      okText={productId ? t("save") : t("create")}
+      cancelText={t("cancel")}
       width={840}
     >
       <Form layout="vertical" form={form}>
         <Form.Item
-          label="Tên sản phẩm"
+          label={t("productName")}
           name="name"
-          rules={[{ required: true, message: "Vui lòng nhập tên sản phẩm" }]}
+          rules={[{ required: true, message: t("required", { name: t("productName") }) }]}
         >
-          <Input placeholder="Nhập tên sản phẩm" />
+          <Input placeholder={t("enterName")} />
         </Form.Item>
 
         <Form.Item
-          label="Danh mục"
+          label={t("category")}
           name="categoryId"
-          rules={[{ required: true, message: "Vui lòng chọn danh mục" }]}
+          rules={[{ required: true, message: t("required", { name: t("category") }) }]}
         >
           <Select
-            placeholder="Chọn danh mục"
+            placeholder={t("selectCategory")}
             options={categories.map((c) => ({ label: c.name, value: c.id }))}
           />
         </Form.Item>
 
-        <Form.Item label="Mô tả" name="description">
-          <Input.TextArea rows={3} placeholder="Nhập mô tả" />
+        <Form.Item label={t("description")} name="description">
+          <Input.TextArea rows={3} placeholder={t("enterDescription")} />
         </Form.Item>
 
-        <Form.Item label="Trạng thái" name="isActive" valuePropName="checked">
+        <Form.Item label={t("status")} name="isActive" valuePropName="checked">
           <Switch />
         </Form.Item>
 
@@ -168,7 +170,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                   key={colorField.key}
                   size="small"
                   className="mb-4"
-                  title={`Màu #${colorField.name + 1}`}
+                  title={t("colorNumber", { index: colorField.name + 1 })}
                   extra={
                     <DeleteOutlined
                       style={{ color: "red", cursor: "pointer" }}
@@ -178,14 +180,14 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                 >
                   <Space align="baseline" wrap>
                     <Form.Item
-                      label="Tên màu"
+                      label={t("colorName")}
                       name={[colorField.name, "color"]}
-                      rules={[{ required: true, message: "Nhập tên màu" }]}
+                      rules={[{ required: true, message: t("required", { name: t("colorName") }) }]}
                     >
-                      <Input placeholder="Ví dụ: Đen" style={{ width: 200 }} />
+                      <Input placeholder={t("exampleColor")} style={{ width: 200 }} />
                     </Form.Item>
-                    <Form.Item label="Mã màu" name={[colorField.name, "colorCode"]}>
-                      <Input placeholder="#000000" style={{ width: 140 }} />
+                    <Form.Item label={t("colorCode")} name={[colorField.name, "colorCode"]}>
+                      <Input placeholder={t("exampleColorCode")} style={{ width: 140 }} />
                     </Form.Item>
                   </Space>
 
@@ -195,11 +197,11 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                         {imageFields.map((imageField) => (
                           <Space key={imageField.key} align="baseline">
                             <Form.Item
-                              label="Link ảnh"
+                              label={t("imageUrl")}
                               name={[imageField.name, "imageUrl"]}
-                              rules={[{ required: true, message: "Nhập link ảnh" }]}
+                              rules={[{ required: true, message: t("required", { name: t("imageUrl") }) }]}
                             >
-                              <Input placeholder="https://..." style={{ width: 420 }} />
+                              <Input placeholder={t("exampleImageUrl")} style={{ width: 420 }} />
                             </Form.Item>
                             <DeleteOutlined
                               style={{ color: "red", cursor: "pointer" }}
@@ -213,7 +215,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                             icon={<PlusOutlined />}
                             onClick={() => addImage({ imageUrl: "" })}
                           >
-                            Thêm ảnh
+                            {t("addImage")}
                           </Button>
                         </Form.Item>
                       </>
@@ -226,23 +228,23 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                         {variantFields.map((variantField) => (
                           <Space key={variantField.key} align="baseline" wrap>
                             <Form.Item
-                              label="Size"
+                              label={t("size")}
                               name={[variantField.name, "size"]}
-                              rules={[{ required: true, message: "Nhập size" }]}
+                              rules={[{ required: true, message: t("required", { name: t("size") }) }]}
                             >
-                              <Input placeholder="M" style={{ width: 100 }} />
+                              <Input placeholder={t("exampleSize")} style={{ width: 100 }} />
                             </Form.Item>
                             <Form.Item
-                              label="Giá"
+                              label={t("price")}
                               name={[variantField.name, "price"]}
-                              rules={[{ required: true, message: "Nhập giá" }]}
+                              rules={[{ required: true, message: t("required", { name: t("price") }) }]}
                             >
                               <InputNumber min={0} style={{ width: 160 }} />
                             </Form.Item>
                             <Form.Item
-                              label="Tồn kho"
+                              label={t("stock")}
                               name={[variantField.name, "stock"]}
-                              rules={[{ required: true, message: "Nhập tồn kho" }]}
+                              rules={[{ required: true, message: t("required", { name: t("stock") }) }]}
                             >
                               <InputNumber min={0} step={1} style={{ width: 120 }} />
                             </Form.Item>
@@ -258,7 +260,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
                             icon={<PlusOutlined />}
                             onClick={() => addVariant({ size: "", price: 0, stock: 0 })}
                           >
-                            Thêm size
+                            {t("addSize")}
                           </Button>
                         </Form.Item>
                       </>
@@ -269,7 +271,7 @@ const ModalProducts = ({ open, productId, categories, onClose, onSuccess }: Prop
 
               <Form.Item>
                 <Button type="dashed" block icon={<PlusOutlined />} onClick={() => addColor(makeEmptyColor())}>
-                  Thêm màu
+                  {t("addColor")}
                 </Button>
               </Form.Item>
             </>

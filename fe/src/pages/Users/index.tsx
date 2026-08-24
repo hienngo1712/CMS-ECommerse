@@ -12,42 +12,44 @@ import { AuthContext } from "../../contexts/AuthContext";
 import UsersTable from "./Table";
 import ModalUsers from "./Modal";
 import type { PaginationMeta, UserQuery, UserRow } from "./Types";
-import { ROLE_LABEL, USER_ROLES } from "./Types";
-
-const usersFilter: FilterConfig[] = [
-  {
-    type: "input",
-    name: "search",
-    placeholder: "Username hoặc email",
-    label: "Tìm kiếm",
-  },
-  {
-    type: "select",
-    name: "role",
-    placeholder: "Chọn quyền",
-    options: [
-      { label: "Tất cả", value: "" },
-      ...USER_ROLES.map((role) => ({ label: ROLE_LABEL[role], value: role })),
-    ],
-    label: "Quyền",
-  },
-  {
-    type: "select",
-    name: "isActive",
-    placeholder: "Chọn trạng thái",
-    options: [
-      { label: "Tất cả", value: "" },
-      { label: "Hoạt động", value: "true" },
-      { label: "Đã khoá", value: "false" },
-    ],
-    label: "Trạng thái",
-  },
-];
+import { ROLE_KEY, USER_ROLES } from "./Types";
+import { useT } from "../../i18n";
 
 const UsersPage = () => {
   const { isDark } = useContext(ThemeContext);
   const { user } = useContext(AuthContext);
   const { message } = App.useApp();
+  const { t } = useT();
+
+  const usersFilter: FilterConfig[] = [
+    {
+      type: "input",
+      name: "search",
+      placeholder: t("usernameOrEmail"),
+      label: t("search"),
+    },
+    {
+      type: "select",
+      name: "role",
+      placeholder: t("selectRole"),
+      options: [
+        { label: t("all"), value: "" },
+        ...USER_ROLES.map((role) => ({ label: t(ROLE_KEY[role]), value: role })),
+      ],
+      label: t("role"),
+    },
+    {
+      type: "select",
+      name: "isActive",
+      placeholder: t("selectStatus"),
+      options: [
+        { label: t("all"), value: "" },
+        { label: t("active"), value: "true" },
+        { label: t("locked"), value: "false" },
+      ],
+      label: t("status"),
+    },
+  ];
   const [users, setUsers] = useState<UserRow[]>([]);
   const [meta, setMeta] = useState<PaginationMeta>({
     total: 0,
@@ -76,7 +78,7 @@ const UsersPage = () => {
       setMeta(res.meta);
     } catch (error) {
       console.error(error);
-      message.error("Không tải được danh sách người dùng");
+      message.error(t("loadFailed"));
     } finally {
       setIsLoading(false);
     }
@@ -111,11 +113,11 @@ const UsersPage = () => {
   const handleDelete = async (id: number) => {
     try {
       await userService.deleteUser(id);
-      message.success("Xóa người dùng thành công");
+      message.success(t("deleteSuccess"));
       fetchUsers();
     } catch (error) {
       console.error(error);
-      message.error("Xóa người dùng thất bại");
+      message.error(t("deleteFailed"));
     }
   };
 
@@ -134,7 +136,7 @@ const UsersPage = () => {
       <Result
         status="403"
         title="403"
-        subTitle="Chỉ tài khoản quản trị mới xem được mục này."
+        subTitle={t("adminOnly")}
       />
     );
   }
@@ -153,7 +155,7 @@ const UsersPage = () => {
       <div className="flex items-end justify-between mb-10">
         <AppFilters filters={usersFilter} onChange={handleFilterChange} />
         <Button type="primary" onClick={handleCreate}>
-          + Tạo người dùng mới
+          + {t("createUser")}
         </Button>
       </div>
 

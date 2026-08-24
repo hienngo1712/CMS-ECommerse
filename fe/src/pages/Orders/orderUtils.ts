@@ -19,5 +19,7 @@ export const formatDateTime = (iso: string) => {
 export const getTotalQuantity = (order: Order) =>
   order.items.reduce((sum, item) => sum + item.quantity, 0);
 
+// Trả undefined khi đơn không gắn với ai: chữ "khách vãng lai" phụ thuộc ngôn
+// ngữ đang chọn nên để nơi hiển thị tự dịch, hàm này giữ nguyên là hàm thuần.
 export const getCustomerName = (order: Order) =>
-  order.address?.fullname ?? order.user?.username ?? "Khách vãng lai";
+  order.address?.fullname ?? order.user?.username;

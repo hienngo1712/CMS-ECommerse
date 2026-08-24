@@ -51,8 +51,8 @@ describe("getCustomerName", () => {
     expect(getCustomerName(order)).toBe("admin");
   });
 
-  it("không có gì thì là khách vãng lai", () => {
-    expect(getCustomerName(baseOrder())).toBe("Khách vãng lai");
+  it("không có gì thì trả undefined để nơi hiển thị tự dịch", () => {
+    expect(getCustomerName(baseOrder())).toBeUndefined();
   });
 });
 

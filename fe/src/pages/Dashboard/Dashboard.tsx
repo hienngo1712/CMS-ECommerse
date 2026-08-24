@@ -4,9 +4,10 @@ import { useNavigate } from "react-router-dom";
 
 import dashboardService from "../../services/DashboardService";
 import { ThemeContext } from "../../contexts/ThemeContext";
-import { ORDER_STATUSES, STATUS_COLOR, STATUS_LABEL } from "../Orders/Types";
+import { ORDER_STATUSES, STATUS_COLOR, STATUS_KEY } from "../Orders/Types";
 import { formatDateTime, formatMoney } from "../Orders/orderUtils";
 import type { DashboardStats, LowStockRow, RecentOrderRow } from "./Types";
+import { useT } from "../../i18n";
 
 const Dashboard = () => {
   const { isDark } = useContext(ThemeContext);
@@ -14,6 +15,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { message } = App.useApp();
+  const { t } = useT();
 
   useEffect(() => {
     dashboardService
@@ -21,10 +23,10 @@ const Dashboard = () => {
       .then(setStats)
       .catch((error) => {
         console.error(error);
-        message.error("Không tải được số liệu tổng quan");
+        message.error(t("loadFailed"));
       })
       .finally(() => setLoading(false));
-  }, [message]);
+  }, [message, t]);
 
   const cardStyle = {
     background: isDark ? "#262626" : "#fff",
@@ -39,15 +41,15 @@ const Dashboard = () => {
   }
 
   if (!stats) {
-    return <div className="py-20 text-center">Chưa có số liệu để hiển thị.</div>;
+    return <div className="py-20 text-center">{t("noStats")}</div>;
   }
 
   const lowStockColumns = [
-    { title: "Sản phẩm", dataIndex: "product", key: "product" },
-    { title: "Màu", dataIndex: "color", key: "color" },
-    { title: "Size", dataIndex: "size", key: "size" },
+    { title: t("product"), dataIndex: "product", key: "product" },
+    { title: t("color"), dataIndex: "color", key: "color" },
+    { title: t("size"), dataIndex: "size", key: "size" },
     {
-      title: "Còn lại",
+      title: t("remaining"),
       dataIndex: "stock",
       key: "stock",
       render: (stock: number) => (
@@ -58,25 +60,25 @@ const Dashboard = () => {
 
   const recentColumns = [
     {
-      title: "Mã đơn",
+      title: t("orderId"),
       key: "id",
       render: (_: unknown, row: RecentOrderRow) => <b>#{row.id}</b>,
     },
-    { title: "Khách hàng", dataIndex: "customer", key: "customer" },
+    { title: t("customer"), dataIndex: "customer", key: "customer" },
     {
-      title: "Trạng thái",
+      title: t("status"),
       key: "status",
       render: (_: unknown, row: RecentOrderRow) => (
-        <Tag color={STATUS_COLOR[row.status]}>{STATUS_LABEL[row.status]}</Tag>
+        <Tag color={STATUS_COLOR[row.status]}>{t(STATUS_KEY[row.status])}</Tag>
       ),
     },
     {
-      title: "Tổng tiền",
+      title: t("total"),
       key: "totalAmount",
       render: (_: unknown, row: RecentOrderRow) => formatMoney(row.totalAmount),
     },
     {
-      title: "Ngày đặt",
+      title: t("orderDate"),
       key: "createdAt",
       render: (_: unknown, row: RecentOrderRow) => formatDateTime(row.createdAt),
     },
@@ -88,43 +90,43 @@ const Dashboard = () => {
         <Col xs={24} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
-              title="Doanh thu đã giao"
+              title={t("revenueDelivered")}
               value={formatMoney(stats.revenue.delivered)}
-              suffix="đ"
+              suffix={t("currency")}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
-              title="Đang chờ giao"
+              title={t("revenuePending")}
               value={formatMoney(stats.revenue.pending)}
-              suffix="đ"
+              suffix={t("currency")}
             />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card style={cardStyle}>
-            <Statistic title="Tổng số đơn" value={stats.orders.total} />
+            <Statistic title={t("totalOrders")} value={stats.orders.total} />
           </Card>
         </Col>
         <Col xs={24} sm={12} lg={6}>
           <Card style={cardStyle}>
             <Statistic
-              title="Sản phẩm / Danh mục"
+              title={`${t("product")} / ${t("category")}`}
               value={`${stats.catalog.products} / ${stats.catalog.categories}`}
             />
           </Card>
         </Col>
       </Row>
 
-      <Card title="Đơn hàng theo trạng thái" className="mt-4" style={cardStyle}>
+      <Card title={t("ordersByStatus")} className="mt-4" style={cardStyle}>
         <Row gutter={[16, 16]}>
           {ORDER_STATUSES.map((status) => (
             <Col xs={12} sm={8} lg={4} key={status}>
               <Statistic
                 title={
-                  <Tag color={STATUS_COLOR[status]}>{STATUS_LABEL[status]}</Tag>
+                  <Tag color={STATUS_COLOR[status]}>{t(STATUS_KEY[status])}</Tag>
                 }
                 value={stats.orders.byStatus[status]}
               />
@@ -135,26 +137,26 @@ const Dashboard = () => {
 
       <Row gutter={[16, 16]} className="mt-4">
         <Col xs={24} lg={12}>
-          <Card title="Sắp hết hàng (còn 5 trở xuống)" style={cardStyle}>
+          <Card title={t("lowStock")} style={cardStyle}>
             <Table<LowStockRow>
               columns={lowStockColumns}
               dataSource={stats.lowStock}
               rowKey="variantId"
               pagination={false}
               size="small"
-              locale={{ emptyText: "Không có mặt hàng nào sắp hết" }}
+              locale={{ emptyText: t("lowStockEmpty") }}
             />
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="Đơn hàng gần đây" style={cardStyle}>
+          <Card title={t("recentOrders")} style={cardStyle}>
             <Table<RecentOrderRow>
               columns={recentColumns}
               dataSource={stats.recentOrders}
               rowKey="id"
               pagination={false}
               size="small"
-              locale={{ emptyText: "Chưa có đơn nào" }}
+              locale={{ emptyText: t("noOrders") }}
               onRow={() => ({
                 onClick: () => navigate("/orders"),
                 style: { cursor: "pointer" },
