@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { App, Button, Result } from "antd";
+import { App, Button, Result, Space } from "antd";
 
 import AppFilters, {
   asText,
@@ -14,6 +14,8 @@ import ModalUsers from "./Modal";
 import type { PaginationMeta, UserQuery, UserRow } from "./Types";
 import { ROLE_KEY, USER_ROLES } from "./Types";
 import { useT } from "../../i18n";
+import ExportButton from "../../components/common/ExportButton";
+import type { ExcelColumn } from "../../utils/exportExcel";
 
 const UsersPage = () => {
   const { isDark } = useContext(ThemeContext);
@@ -69,6 +71,13 @@ const UsersPage = () => {
   const [editingId, setEditingId] = useState<number | undefined>(undefined);
 
   const isAdmin = user?.role === "admin";
+
+  const exportColumns: ExcelColumn<UserRow>[] = [
+    { header: t("username"), value: (row) => row.username, width: 24 },
+    { header: t("email"), value: (row) => row.email, width: 30 },
+    { header: t("role"), value: (row) => t(ROLE_KEY[row.role]) },
+    { header: t("status"), value: (row) => (row.isActive ? t("active") : t("locked")) },
+  ];
 
   const fetchUsers = async () => {
     try {
@@ -154,9 +163,25 @@ const UsersPage = () => {
     >
       <div className="flex items-end justify-between mb-10">
         <AppFilters filters={usersFilter} onChange={handleFilterChange} />
-        <Button type="primary" onClick={handleCreate}>
-          + {t("createUser")}
-        </Button>
+        <Space>
+          <ExportButton
+            fileName="nguoi-dung"
+            sheetName={t("user")}
+            columns={exportColumns}
+            fetchPage={(page, limit) =>
+              userService.getUsers({
+                search: query.search,
+                role: query.role,
+                isActive: query.isActive,
+                page,
+                limit,
+              })
+            }
+          />
+          <Button type="primary" onClick={handleCreate}>
+            + {t("createUser")}
+          </Button>
+        </Space>
       </div>
 
       <UsersTable

@@ -107,6 +107,12 @@
   "passwordMismatch": "Hai mật khẩu không khớp",
   "emailInvalid": "Email không hợp lệ",
   "invalidData": "Dữ liệu không hợp lệ",
+  "exportExcel": "Xuất Excel",
+  "exportEmpty": "Không có dữ liệu để xuất",
+  "exportSuccess": "Đã xuất {count} dòng",
+  "exportTruncated": "Dữ liệu quá lớn, chỉ xuất {count} dòng đầu tiên",
+  "exportFailed": "Xuất Excel thất bại",
+  "grandTotal": "Tổng cộng",
 
   "createSuccess": "Tạo thành công",
   "updateSuccess": "Cập nhật thành công",

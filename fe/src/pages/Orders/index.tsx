@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { App } from "antd";
+import { App, Space } from "antd";
 
 import AppFilters, {
   asText,
@@ -13,6 +13,9 @@ import OrderDetail from "./Detail";
 import type { Order, OrderQuery, PaginationMeta } from "./Types";
 import { ORDER_STATUSES, STATUS_KEY } from "./Types";
 import { useT } from "../../i18n";
+import ExportButton from "../../components/common/ExportButton";
+import type { ExcelColumn } from "../../utils/exportExcel";
+import { getCustomerName, getTotalQuantity } from "./orderUtils";
 
 const OrdersPage = () => {
   const { isDark } = useContext(ThemeContext);
@@ -56,6 +59,26 @@ const OrdersPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [viewingId, setViewingId] = useState<number | undefined>(undefined);
+
+  const exportColumns: ExcelColumn<Order>[] = [
+    { header: t("orderId"), value: (row) => row.id, width: 10 },
+    { header: t("customer"), value: (row) => getCustomerName(row) ?? t("guest"), width: 24 },
+    { header: t("phone"), value: (row) => row.address?.phone ?? "-" },
+    { header: t("quantity"), value: (row) => getTotalQuantity(row), width: 12, total: true },
+    { header: t("total"), value: (row) => row.totalAmount, numFmt: "#,##0", total: true },
+    { header: t("status"), value: (row) => t(STATUS_KEY[row.status]) },
+    {
+      header: t("orderDate"),
+      // Trả Date để Excel hiểu là ngày (lọc, sắp xếp được), chuỗi hỏng thì
+      // hạ xuống dấu gạch thay vì ném Invalid Date vào file.
+      value: (row) => {
+        const date = new Date(row.createdAt);
+        return Number.isNaN(date.getTime()) ? "-" : date;
+      },
+      numFmt: "hh:mm dd/mm/yyyy",
+      width: 18,
+    },
+  ];
 
   const fetchOrders = async () => {
     try {
@@ -109,6 +132,21 @@ const OrdersPage = () => {
     >
       <div className="flex items-end justify-between mb-10">
         <AppFilters filters={ordersFilter} onChange={handleFilterChange} />
+        <Space>
+          <ExportButton
+            fileName="don-hang"
+            sheetName={t("order")}
+            columns={exportColumns}
+            fetchPage={(page, limit) =>
+              orderService.getOrders({
+                search: query.search,
+                status: query.status,
+                page,
+                limit,
+              })
+            }
+          />
+        </Space>
       </div>
 
       <OrdersTable

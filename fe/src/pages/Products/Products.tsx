@@ -1,5 +1,5 @@
 import { useContext, useEffect, useState } from "react";
-import { App, Button } from "antd";
+import { App, Button, Space } from "antd";
 
 import AppFilters, {
   asText,
@@ -14,6 +14,9 @@ import { ThemeContext } from "../../contexts/ThemeContext";
 import ProductsTable from "./ProductsTable";
 import ModalProducts from "./Modal";
 import { useT } from "../../i18n";
+import ExportButton from "../../components/common/ExportButton";
+import type { ExcelColumn } from "../../utils/exportExcel";
+import { formatPriceRange, getTotalStock } from "./productUtils";
 
 const Products = () => {
   const { isDark } = useContext(ThemeContext);
@@ -63,6 +66,13 @@ const Products = () => {
       setIsLoading(false);
     }
   };
+
+  const exportColumns: ExcelColumn<Product>[] = [
+    { header: t("productName"), value: (row) => row.name, width: 30 },
+    { header: t("category"), value: (row) => row.category?.name ?? "-", width: 24 },
+    { header: t("price"), value: (row) => formatPriceRange(row) },
+    { header: t("totalStock"), value: (row) => getTotalStock(row), total: true },
+  ];
 
   const handleFilterChange = (values: FilterValues) => {
     setQuery((prev) => ({
@@ -141,9 +151,24 @@ const Products = () => {
     >
       <div className="flex items-end justify-between mb-10">
         <AppFilters filters={productsFilter} onChange={handleFilterChange} />
-        <Button type="primary" onClick={handleCreate}>
-          + {t("createProduct")}
-        </Button>
+        <Space>
+          <ExportButton
+            fileName="san-pham"
+            sheetName={t("product")}
+            columns={exportColumns}
+            fetchPage={(page, limit) =>
+              productService.getProducts({
+                search: query.search,
+                categoryId: query.categoryId,
+                page,
+                limit,
+              })
+            }
+          />
+          <Button type="primary" onClick={handleCreate}>
+            + {t("createProduct")}
+          </Button>
+        </Space>
       </div>
 
       <ProductsTable

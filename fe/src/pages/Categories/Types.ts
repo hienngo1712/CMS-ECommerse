@@ -1,6 +1,7 @@
 export type CategoriesResponse = {
   id: number;
   name: string;
+  slug: string;
   description?: string;
   isActive: boolean;
   isDeleted?: boolean;

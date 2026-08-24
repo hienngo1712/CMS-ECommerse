@@ -5,12 +5,14 @@ import AppFilters, {
   type FilterConfig,
   type FilterValues,
 } from "../../components/common/AppFilters.tsx";
-import { App, Button } from "antd";
+import { App, Button, Space } from "antd";
 import TableCategories from "./Table.tsx";
 import ModalCategories from "./Modal.tsx";
 import categoryService from "../../services/CategoryService.ts";
 import type { CategoriesResponse, CategoryQuery } from "./Types.ts";
 import { useT } from "../../i18n";
+import ExportButton from "../../components/common/ExportButton.tsx";
+import type { ExcelColumn } from "../../utils/exportExcel.ts";
 
 const CategoriesPage = () => {
   const { isDark } = useContext(ThemeContext);
@@ -56,6 +58,12 @@ const CategoriesPage = () => {
       limit: prev.limit,
     }));
   };
+  const exportColumns: ExcelColumn<CategoriesResponse>[] = [
+    { header: t("categoryName"), value: (row) => row.name, width: 30 },
+    { header: t("slug"), value: (row) => row.slug, width: 30 },
+    { header: t("status"), value: (row) => (row.isActive ? t("active") : t("off")) },
+  ];
+
   // fetch data
   const fetchCategories = async () => {
     try {
@@ -133,9 +141,24 @@ const CategoriesPage = () => {
           filters={categoriesFilter}
           onChange={handleGetValueFilter}
         />
-        <Button onClick={handleCreateCategory} type={"primary"}>
-          + {t("createCategory")}
-        </Button>
+        <Space>
+          <ExportButton
+            fileName="danh-muc"
+            sheetName={t("category")}
+            columns={exportColumns}
+            fetchPage={(page, limit) =>
+              categoryService.getCategories({
+                search: query.search,
+                isActive: query.isActive,
+                page,
+                limit,
+              })
+            }
+          />
+          <Button onClick={handleCreateCategory} type={"primary"}>
+            + {t("createCategory")}
+          </Button>
+        </Space>
       </div>
       <TableCategories
         loading={isLoading}

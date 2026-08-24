@@ -107,6 +107,12 @@
   "passwordMismatch": "The two passwords do not match",
   "emailInvalid": "Invalid email address",
   "invalidData": "Invalid data",
+  "exportExcel": "Export to Excel",
+  "exportEmpty": "There is nothing to export",
+  "exportSuccess": "Exported {count} rows",
+  "exportTruncated": "Too much data, only the first {count} rows were exported",
+  "exportFailed": "Could not export the file",
+  "grandTotal": "Grand total",
 
   "createSuccess": "Created successfully",
   "updateSuccess": "Updated successfully",
