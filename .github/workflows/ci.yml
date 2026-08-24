@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend (147 test)
+    runs-on: ubuntu-latest
+
+    # Test backend chạy TRUNCATE trên database thật, không giả lập được, nên
+    # phải dựng hẳn một Postgres cho job này.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: cms_ci_dev
+        ports:
+          - 5432:5432
+        # Không chờ healthy thì bước migrate chạy trước lúc Postgres kịp mở cổng.
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      # Không có be/.env trên CI (nó nằm trong gitignore, đúng như thiết kế) nên
+      # ba biến này phải khai ở đây. dotenv không ghi đè biến đã có sẵn và im
+      # lặng bỏ qua khi không thấy file, nên code không phải sửa gì.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cms_ci_dev?schema=public
+      DATABASE_URL_TEST: postgresql://postgres:postgres@localhost:5432/cms_ci_test?schema=public
+      # Giá trị giả cho môi trường dùng một lần. utils/jwt.js ném lỗi nếu thiếu
+      # biến này nên không bỏ trống được.
+      JWT_SECRET: ci-khong-phai-secret-that-chi-dung-mot-lan
+
+    defaults:
+      run:
+        working-directory: be
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: be/package-lock.json
+
+      # Service container chỉ tạo sẵn một database. Vẫn tách riêng DB test đúng
+      # như quy ước ở be/.env.example, dù ở CI cả container là dùng một lần.
+      - name: Tạo database test
+        run: PGPASSWORD=postgres psql -h localhost -U postgres -c 'CREATE DATABASE "cms_ci_test"'
+
+      - run: npm ci
+
+      # Bắt buộc: be/.gitignore có /generated/prisma nên Prisma Client không nằm
+      # trong repo, clone về là chưa có. Bỏ bước này thì npm test fail ngay dòng
+      # require đầu tiên.
+      - name: Sinh Prisma Client
+        run: npx prisma generate
+
+      # Script test tự chạy migrate lên DATABASE_URL_TEST trước.
+      - run: npm test
+
+  frontend:
+    name: Frontend (lint, build, 13 test)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: fe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: fe/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      # build chạy `tsc -b` trước vite nên đây cũng là bước kiểm kiểu.
+      - run: npm run build
+
+      - run: npm test
